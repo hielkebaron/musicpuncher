@@ -1,56 +1,79 @@
 import sys
+
 from mido import MidiFile
+
+from keyboard import Keyboard
 
 MIN_VELOCITY = 20  # PPP
 
 class DebugTarget(object):
+    def __init__(self, keyboard: Keyboard):
+        self.keyboard = keyboard
+        self.position = None
+
     def reset(self):
         print('* reset *')
+        self.position = 0
 
-    def move(self, delta_tone, delta_time):
-        print(f"move({delta_tone}, {delta_time})")
+    def move(self, tone, delta_time):
+        row = self.keyboard.get_index(tone)
+        delta = row - self.position
+        print(f"move({delta}, {delta_time})")
+        self.position = row
 
     def punch(self):
         print(f"punch")
 
 
-class MusicPuncher(object):
-    def __init__(self, target):
+class MidiProcessor(object):
+    @staticmethod
+    def __get_notes(filename):
+        noteset = set()
+        with MidiFile(filename) as mid:
+            for msg in mid:
+                if (msg.type == 'note_on' or msg.type == 'note_off'):
+                    noteset.add(msg.note)
+        return noteset
+
+    def __init__(self, filename, target):
+        self.filename = filename
         self.target = target
+        noteset = MidiProcessor.__get_notes(filename)
+        self.transposition = target.keyboard.calculate_transposition(noteset)
+        print(f"Notes: {sorted(noteset)}")
+        print(f"Transposing by {self.transposition}")
 
-    def reset(self):
+    def process(self):
         self.target.reset()
-        self.head = 0
+        self.last_note = 0  # we remember last note so we can optimize the order
 
-    def punch(self, delta, notes):
+        with MidiFile(self.filename) as mid:
+            notes_on = set()
+            delta = 0
+            for msg in mid:
+                if msg.type == 'note_on' and msg.velocity >= MIN_VELOCITY:
+                    notes_on.add(msg.note + self.transposition)
+                if (msg.type == 'note_on' or msg.type == 'note_off') and msg.time != 0:
+                    self.__punch(delta, notes_on)
+                    delta = msg.time
+
+    def __punch(self, delta, notes):
         if len(notes) == 0:
             self.target.move(0, delta)
         else:
             note_list = sorted(notes)
-            if abs(self.head - note_list[0]) > abs(self.head - note_list[-1]):
+            if abs(self.last_note - note_list[0]) > abs(self.last_note - note_list[-1]):
                 note_list.reverse()
             for note in note_list:
-                delta_tone = note - self.head
-                self.target.move(delta_tone, delta)
+                self.target.move(note, delta)
                 self.target.punch()
-                self.head = note
+                self.last_note = note
                 delta = 0
 
 
-def process(target, filename):
-    mid = MidiFile(filename)
-    puncher = MusicPuncher(target)
-    puncher.reset()
+#                    c   d   e   f   g   a   b   c   d   e   f   g   a   b   c
+keyboard = Keyboard([48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72])
+target = DebugTarget(keyboard)
+processor = MidiProcessor(sys.argv[1], target)
 
-    notes_on = set()
-    delta = 0.0
-    for msg in mid:
-        if not msg.is_meta:
-            if msg.type == 'note_on' and msg.velocity >= MIN_VELOCITY:
-                notes_on.add(msg.note)
-            if (msg.type == 'note_on' or msg.type == 'note_off') and msg.time != 0:
-                puncher.punch(delta, notes_on)
-                delta = msg.time
-                notes_on.clear()
-
-process(DebugTarget(), sys.argv[1])
+processor.process()

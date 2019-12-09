@@ -6,6 +6,17 @@ Software for a Music Box card puncher
 ```bash
 virtualenv venv
 . venv/bin/activate
-pip install -r requirements.txt 
+pip install -r requirements.txt
+```
+
+Run the tests:
+
+```bash
+pytest
+```
+
+Process a midi file:
+
+```bash
 python main.py <file.mid>
 ```
