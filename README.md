@@ -1,2 +1,2 @@
 # musicpuncher
-Music box hole puncher
+Software for a Music Box card puncher
