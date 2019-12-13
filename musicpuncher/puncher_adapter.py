@@ -36,9 +36,9 @@ class DebugAdapter(object):
             sleep(time)
 
 
-MIN_SPS = 10  # steps per second
-MAX_SPS = 20  # steps per second
-ACCELERATION = 10  # SPS per second
+MIN_SPS = 1000  # steps per second
+MAX_SPS = 2000  # steps per second
+ACCELERATION = 400  # SPS per second
 
 
 class PuncherAdapter(object):
@@ -55,17 +55,20 @@ class PuncherAdapter(object):
 
     def reset(self):
         print('* reset *')
-        self.row_stepper.move_until(-1, self.zero_button.is_pressed)
-        self.row_stepper.move(self.ROW0)
+        # self.row_stepper.move_until(-1, self.zero_button.is_pressed)
+        # self.row_stepper.move(self.ROW0)
         self.position = 0
 
     def move(self, note: int, delay: float):
-        row = self.keyboard.get_index(note)
-        delta = row - self.position
-        print(f"move({delta}, {delay})")
+        # print(f"move({delta}, {delay})")
         self.time_stepper.move(round(delay * self.TIME_STEPS))
-        self.row_stepper.move(delta * self.ROW_STEPS)
-        self.position = row
+        print("move")
+        if note != 0: # HACK voor rij zonder noten
+            row = self.keyboard.get_index(note)
+            delta = row - self.position
+            self.row_stepper.move(delta * self.ROW_STEPS)
+            self.position = row
 
     def punch(self):
         print(f"punch")
+        sleep(0.5)

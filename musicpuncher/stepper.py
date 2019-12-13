@@ -21,8 +21,8 @@ class StepperMotor(object):
         self.acceleration_profile = calculate_acceleration_profile(min_sps, max_sps, acceleration)
         self.min_delay = 1 / max_sps
         self.max_delay = 1 / min_sps
-        print(f"Acceleration profile (ms): {[round(delay * 1000) for delay in self.acceleration_profile]}")
-        print(f"pulses per second {[round(1 / delay) for delay in self.acceleration_profile]}")
+        # print(f"Acceleration profile (ms): {[round(delay * 1000) for delay in self.acceleration_profile]}")
+        # print(f"pulses per second {[round(1 / delay) for delay in self.acceleration_profile]}")
 
     def __set_dir(self, dir: int):
         self.dir_pin.value = False if dir < 0 else True
@@ -49,5 +49,11 @@ class StepperMotor(object):
         rem = count
         for i in range(0, count):
             rem -= 1
-            delay = profile[rem] if rem <= steps_to_stop else profile[i] if i < proflen else min_delay
+            if rem <= steps_to_stop:
+                delay = profile[rem]
+            elif i < proflen:
+                delay = profile[i]
+                steps_to_stop = i
+            else:
+                delay = min_delay
             self.__step(delay)
