@@ -68,7 +68,7 @@ def __parse_midi(filename: str) -> NoteSequence:
 def run(args):
     #                    c   d   e   f   g   a   b   c   d   e   f   g   a   b   c
     keyboard = Keyboard([48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72])
-    adapter = DebugAdapter(keyboard)
+    adapter = DebugAdapter(keyboard, timed=False)
     notes = __parse_midi(args[1])
     processor = MidiProcessor(notes, adapter)
 
