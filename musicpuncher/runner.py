@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Set
 
 from mido import MidiFile
 
@@ -7,16 +7,19 @@ from .puncher_adapter import DebugAdapter
 
 MIN_VELOCITY = 20  # PPP
 
+
 class TimeNotes(object):
     def __init__(self, delay: float, notes: List[int]):
         self.delay = delay
         self.notes = notes
 
+
 NoteSequence = List[TimeNotes]
+
 
 class MidiProcessor(object):
     @staticmethod
-    def __get_notes(notes: NoteSequence):
+    def __get_notes(notes: NoteSequence) -> Set[int]:
         noteset = set()
         for tuple in notes:
             noteset.update(tuple.notes)
@@ -49,6 +52,7 @@ class MidiProcessor(object):
                 self.adapter.punch()
                 self.last_note = note
                 delay = 0
+
 
 def __parse_midi(filename: str) -> NoteSequence:
     """Returns a list of (timedelta, notelist) tuples"""

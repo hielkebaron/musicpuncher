@@ -38,7 +38,7 @@ class DebugAdapter(object):
 
 MIN_SPS = 10  # steps per second
 MAX_SPS = 20  # steps per second
-ACCELERATION = 10  # 10 SPS per second
+ACCELERATION = 10  # SPS per second
 
 
 class PuncherAdapter(object):
@@ -55,7 +55,7 @@ class PuncherAdapter(object):
 
     def reset(self):
         print('* reset *')
-        self.row_stepper.move_until(lambda: self.zero_button.is_pressed())
+        self.row_stepper.move_until(-1, self.zero_button.is_pressed)
         self.row_stepper.move(self.ROW0)
         self.position = 0
 
