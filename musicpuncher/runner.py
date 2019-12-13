@@ -8,21 +8,21 @@ from .puncher_adapter import DebugAdapter
 MIN_VELOCITY = 20  # PPP
 
 class TimeNotes(object):
-    def __init__(self, delta: float, notes: List[int]):
-        self.delta = delta
+    def __init__(self, delay: float, notes: List[int]):
+        self.delay = delay
         self.notes = notes
 
-NoteList = List[TimeNotes]
+NoteSequence = List[TimeNotes]
 
 class MidiProcessor(object):
     @staticmethod
-    def __get_notes(notes: NoteList):
+    def __get_notes(notes: NoteSequence):
         noteset = set()
         for tuple in notes:
             noteset.update(tuple.notes)
         return noteset
 
-    def __init__(self, notes: NoteList, adapter):
+    def __init__(self, notes: NoteSequence, adapter):
         self.notes = notes
         self.adapter = adapter
         noteset = MidiProcessor.__get_notes(notes)
@@ -35,22 +35,22 @@ class MidiProcessor(object):
         self.last_note = 0  # we remember last note so we can optimize the order
 
         for tuple in self.notes:
-            self.__punch(tuple.delta, tuple.notes)
+            self.__punch(tuple.delay, tuple.notes)
 
-    def __punch(self, delta, notes):
+    def __punch(self, delay, notes):
         if len(notes) == 0:
-            self.adapter.move(0, delta)
+            self.adapter.move(0, delay)
         else:
             note_list = sorted([note + self.transposition for note in notes])
             if abs(self.last_note - note_list[0]) > abs(self.last_note - note_list[-1]):
                 note_list.reverse()
             for note in note_list:
-                self.adapter.move(note, delta)
+                self.adapter.move(note, delay)
                 self.adapter.punch()
                 self.last_note = note
-                delta = 0
+                delay = 0
 
-def __parse_midi(filename: str) -> NoteList:
+def __parse_midi(filename: str) -> NoteSequence:
     """Returns a list of (timedelta, notelist) tuples"""
     notes = []
     with MidiFile(filename) as mid:
