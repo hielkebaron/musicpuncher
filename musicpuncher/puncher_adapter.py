@@ -1,7 +1,7 @@
 import math
 from time import sleep
 
-from gpiozero import Button
+from gpiozero import Button, OutputDevice
 
 from .keyboard import Keyboard
 from .stepper import StepperMotor
@@ -51,6 +51,8 @@ class PuncherAdapter(object):
         self.time_stepper = StepperMotor(12, 16, MIN_SPS, MAX_SPS, ACCELERATION)
         self.row_stepper = StepperMotor(20, 21, MIN_SPS, MAX_SPS, ACCELERATION)
         self.zero_button = Button(2)
+        self.punch_pin = OutputDevice(3)
+
         self.position = None
 
     def reset(self):
@@ -71,4 +73,7 @@ class PuncherAdapter(object):
 
     def punch(self):
         print(f"punch")
-        sleep(0.5)
+        self.punch_pin.on()
+        sleep(0.2)
+        self.punch_pin.off()
+        sleep(0.3)
