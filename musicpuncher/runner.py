@@ -1,11 +1,12 @@
+import argparse
 from typing import List, Set
 
-from mido import MidiFile
 from gpiozero import Button
+from mido import MidiFile
 
-from .stepper import StepperMotor
 from .keyboard import Keyboard
-from .puncher_adapter import DebugAdapter, PuncherAdapter
+from .pigpio_adapter import PiGPIOPuncherAdapter
+from .stepper import StepperMotor
 
 MIN_VELOCITY = 20  # PPP
 
@@ -74,18 +75,31 @@ def __parse_midi(filename: str) -> NoteSequence:
 
 
 def run1(args):
-    motor = StepperMotor(12,16,500,1000,100)
+    motor = StepperMotor(12, 16, 500, 1000, 100)
     # motor = StepperMotor(20,21,500,1000,100)
     motor.move(10000)
     button = Button(2)
     print(f"Button status: {button.value}")
 
-def run(args):
+
+unixOptions = "ha:p:"
+gnuOptions = ["help", "address=", "port="]
+
+
+def run():
+    # initiate the parser with a description
+    parser = argparse.ArgumentParser(description='Controls the Music Puncher')
+    parser.add_argument('file', metavar='FILE', type=str, help='midi file to punch')
+    parser.add_argument("--address", "-a", help="address of the Music Puncher (defaults to 'localhost')",
+                        default="localhost")
+    parser.add_argument("--port", "-p", help="port of the pigpio daemon (defaults to 8888", type=int, default=8888)
+    args = parser.parse_args()
+
     #                    c   d   e   f   g   a   b   c   d   e   f   g   a   b   c
     keyboard = Keyboard([48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72])
-    # adapter = DebugAdapter(keyboard, timed=False)
-    adapter = PuncherAdapter(keyboard)
-    notes = __parse_midi(args[1])
+
+    adapter = PiGPIOPuncherAdapter(keyboard, address=args.address, port=args.port)
+    notes = __parse_midi(args.file)
     processor = MidiProcessor(notes, adapter)
 
     processor.process()
