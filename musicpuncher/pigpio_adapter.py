@@ -37,7 +37,7 @@ class PiGPIOPuncherAdapter(object):
         print()
         self.pi.wave_clear()
 
-        print(f"move(note={note}, delay={delay}")
+        print(f"move(note={note}, delay={delay})")
 
         calc_start = time()
         moved = self.time_stepper.move(round(delay * self.TIME_STEPS))
@@ -47,7 +47,7 @@ class PiGPIOPuncherAdapter(object):
             moved = moved or self.row_stepper.move(delta * self.ROW_STEPS)
             self.position = row
         calc_end = time()
-        print(f"Waveforms created in {round((calc_end - calc_start) * 1000)} milliseconds")
+        print(f"Waveform created in {round((calc_end - calc_start) * 1000)} milliseconds")
         if moved:
             id = self.pi.wave_create()
             if id < 0:
@@ -59,7 +59,7 @@ class PiGPIOPuncherAdapter(object):
             while self.pi.wave_tx_busy():  # wait for waveform to be sent
                 sleep(0.1)
             wave_end = time()
-            print(f"Waveforms took {round((wave_end - wave_start) * 1000)} milliseconds")
+            print(f"Waveform took {round((wave_end - wave_start) * 1000)} milliseconds")
             self.pi.wave_clear()
         print()
 
