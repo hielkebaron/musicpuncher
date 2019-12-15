@@ -62,14 +62,23 @@ def __parse_midi(filename: str) -> NoteSequence:
             if msg.type == 'note_on' and msg.velocity >= MIN_VELOCITY:
                 notes_on.add(msg.note)
             if (msg.type == 'note_on' or msg.type == 'note_off') and msg.time != 0:
-                notes.append(TimeNotes(delta, list(notes_on)))
-                delta = msg.time
+                if len(notes_on) > 0:
+                    notes.append(TimeNotes(delta, list(notes_on)))
+                    delta = 0
+                delta += msg.time
                 notes_on.clear()
     return notes
 
 
+def __print_notes(noteseq: NoteSequence):
+    for notes in noteseq:
+        print(f"{notes.delay}: {notes.notes}")
+
+
 def punch(file: str, adapter):
     notes = __parse_midi(file)
+    # __print_notes(notes)
+
     processor = MidiProcessor(notes, adapter)
 
     processor.process()
