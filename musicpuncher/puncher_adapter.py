@@ -48,8 +48,8 @@ class PuncherAdapter(object):
 
     def __init__(self, keyboard: Keyboard):
         self.keyboard = keyboard
-        self.time_stepper = StepperMotor(12, 16, MIN_SPS, MAX_SPS, ACCELERATION)
-        self.row_stepper = StepperMotor(20, 21, MIN_SPS, MAX_SPS, ACCELERATION)
+        self.time_stepper = StepperMotor(17, 18, MIN_SPS, MAX_SPS, ACCELERATION)
+        self.row_stepper = StepperMotor(22, 23, MIN_SPS, MAX_SPS, ACCELERATION)
         self.zero_button = Button(2)
         self.punch_pin = OutputDevice(3)
 
