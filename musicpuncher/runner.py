@@ -39,14 +39,14 @@ class MidiProcessor(object):
 
     def __punch(self, delay, notes):
         if len(notes) == 0:
-            self.adapter.move(0, delay)
+            self.adapter.move(delay=delay)
         else:
             note_list = sorted([note + self.transposition for note in notes])
             # print(f"note_list: {note_list}")
             if abs(self.last_note - note_list[0]) > abs(self.last_note - note_list[-1]):
                 note_list.reverse()
             for note in note_list:
-                self.adapter.move(note, delay)
+                self.adapter.move(note=note, delay=delay)
                 self.adapter.punch()
                 self.last_note = note
                 delay = 0

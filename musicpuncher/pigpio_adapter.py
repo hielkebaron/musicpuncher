@@ -33,18 +33,18 @@ class PiGPIOPuncherAdapter(object):
         # self.row_stepper.move(self.ROW0)
         self.position = 0
 
-    def move(self, note: int, delay: float):
+    def move(self, note: int=-1, delay: float=0):
         print()
         self.pi.wave_clear()
 
         print(f"move(note={note}, delay={delay})")
 
         calc_start = time()
-        moved = self.time_stepper.move(round(delay * self.TIME_STEPS))
-        if note != 0:  # HACK voor rij zonder noten
+        moved = self.time_stepper.add_move_waveform(round(delay * self.TIME_STEPS))
+        if note >= 0:
             row = self.keyboard.get_index(note)
             delta = row - self.position
-            moved = moved or self.row_stepper.move(delta * self.ROW_STEPS)
+            moved = moved or self.row_stepper.add_move_waveform(delta * self.ROW_STEPS)
             self.position = row
         calc_end = time()
         print(f"Waveform created in {round((calc_end - calc_start) * 1000)} milliseconds")
@@ -114,7 +114,7 @@ class PiGPIOStepperMotor(object):
         while not condition():
             self.__step(self.max_delay)
 
-    def move(self, steps: int) -> bool:
+    def add_move_waveform(self, steps: int) -> bool:
         self.__set_dir(-1 if steps < 0 else 1)
 
         pulses = []
