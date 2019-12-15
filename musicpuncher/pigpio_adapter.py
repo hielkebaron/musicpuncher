@@ -3,8 +3,8 @@ from time import sleep, time
 import pigpio
 
 MIN_SPS = 1000  # steps per second
-MAX_SPS = 2000  # steps per second
-ACCELERATION = 400  # SPS per second
+MAX_SPS = 3000  # steps per second
+ACCELERATION = 1000  # SPS per second
 from .keyboard import Keyboard
 
 
@@ -138,7 +138,6 @@ class PiGPIOStepperMotor(object):
             pulses.append(pigpio.pulse(0, 1 << self.step_pin, round(delay * 1000000 / 2)))
 
         if len(pulses) > 0:
-            count = self.pi.wave_add_generic(pulses)
-            # print(f"Added {len(pulses)} pulses, total is {count}")
+            self.pi.wave_add_generic(pulses)
             return True
         return False
