@@ -1,4 +1,4 @@
-from time import sleep
+from time import sleep, time
 
 import pigpio
 
@@ -6,6 +6,7 @@ MIN_SPS = 1000  # steps per second
 MAX_SPS = 2000  # steps per second
 ACCELERATION = 400  # SPS per second
 from .keyboard import Keyboard
+
 
 class PiGPIOPuncherAdapter(object):
     ROW0 = 100  # Number of steps from neutral position to ROW 0
@@ -15,13 +16,13 @@ class PiGPIOPuncherAdapter(object):
     def __init__(self, keyboard: Keyboard, address: str = 'localhost', port: int = 8888):
         self.pi = pigpio.pi(address, port)
         if not self.pi.connected:
-            raise RuntimeError(f"PI Not connected, make sure the pi is available on {address} and is running pigpiod on port {port}")
+            raise RuntimeError(
+                f"PI Not connected, make sure the pi is available on {address} and is running pigpiod on port {port}")
 
         self.keyboard = keyboard
         self.time_stepper = PiGPIOStepperMotor(self.pi, 17, 18, MIN_SPS, MAX_SPS, ACCELERATION)
         self.row_stepper = PiGPIOStepperMotor(self.pi, 22, 23, MIN_SPS, MAX_SPS, ACCELERATION)
         # self.zero_button = Button(2)
-        # self.punch_pin = OutputDevice(3)
         self.punch_pin = 3
         self.pi.set_mode(3, pigpio.OUTPUT)
         self.position = None
@@ -38,26 +39,29 @@ class PiGPIOPuncherAdapter(object):
 
         print(f"move(note={note}, delay={delay}")
 
+        calc_start = time()
         moved = self.time_stepper.move(round(delay * self.TIME_STEPS))
-        if note != 0: # HACK voor rij zonder noten
+        if note != 0:  # HACK voor rij zonder noten
             row = self.keyboard.get_index(note)
             delta = row - self.position
             moved = moved or self.row_stepper.move(delta * self.ROW_STEPS)
             self.position = row
-
+        calc_end = time()
+        print(f"Waveforms created in {round((calc_end - calc_start) * 1000)} milliseconds")
         if moved:
             id = self.pi.wave_create()
             if id < 0:
                 raise RuntimeError(f"pigpio error on wave_create: {id}")
             cbs = self.pi.wave_send_once(id)
+            wave_start = time()
             print(f"Send waveform with {cbs} control blocks")
 
             while self.pi.wave_tx_busy():  # wait for waveform to be sent
                 sleep(0.1)
-            print(f"Waveform has ended")
+            wave_end = time()
+            print(f"Waveforms took {round((wave_end - wave_start) * 1000)} milliseconds")
             self.pi.wave_clear()
         print()
-
 
     def punch(self):
         print(f"punch")
@@ -65,6 +69,7 @@ class PiGPIOPuncherAdapter(object):
         sleep(0.2)
         self.pi.write(self.punch_pin, 0)
         sleep(0.3)
+
 
 def calculate_acceleration_profile(min_sps, max_sps, acceleration):
     profile = []
@@ -110,7 +115,6 @@ class PiGPIOStepperMotor(object):
             self.__step(self.max_delay)
 
     def move(self, steps: int) -> bool:
-        print(f"MOVE {self.step_pin} {steps}")
         self.__set_dir(-1 if steps < 0 else 1)
 
         pulses = []
@@ -135,6 +139,6 @@ class PiGPIOStepperMotor(object):
 
         if len(pulses) > 0:
             count = self.pi.wave_add_generic(pulses)
-            print(f"Added {len(pulses)} pulses, total is {count}")
+            # print(f"Added {len(pulses)} pulses, total is {count}")
             return True
         return False
