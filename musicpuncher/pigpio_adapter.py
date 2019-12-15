@@ -72,11 +72,12 @@ class PiGPIOPuncherAdapter(object):
 
 
 def calculate_acceleration_profile(min_sps, max_sps, acceleration):
+    "Returns a list of delays in microseconds"
     profile = []
 
     sps = min_sps
     while sps < max_sps:
-        profile.append(1 / sps)
+        profile.append(round(1000000 / sps))
         sps += acceleration * (1 / sps)
     return profile
 
@@ -84,8 +85,6 @@ def calculate_acceleration_profile(min_sps, max_sps, acceleration):
 class PiGPIOStepperMotor(object):
 
     def __init__(self, pi: pigpio.pi, dir_pin, step_pin, min_sps, max_sps, acceleration):
-        # self.dir_pin = OutputDevice(dir_pin)
-        # self.step_pin = OutputDevice(step_pin)
         self.pi = pi
         self.dir_pin = dir_pin
         self.step_pin = step_pin
@@ -134,8 +133,8 @@ class PiGPIOStepperMotor(object):
                 steps_to_stop = i
             else:
                 delay = min_delay
-            pulses.append(pigpio.pulse(1 << self.step_pin, 0, round(delay * 1000000 / 2)))
-            pulses.append(pigpio.pulse(0, 1 << self.step_pin, round(delay * 1000000 / 2)))
+            pulses.append(pigpio.pulse(1 << self.step_pin, 0, delay >> 1))
+            pulses.append(pigpio.pulse(0, 1 << self.step_pin, delay >> 1))
 
         if len(pulses) > 0:
             self.pi.wave_add_generic(pulses)
