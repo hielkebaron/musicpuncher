@@ -15,17 +15,11 @@ NoteSequence = List[TimeNotes]
 
 
 class MidiProcessor(object):
-    @staticmethod
-    def __get_notes(notes: NoteSequence) -> Set[int]:
-        noteset = set()
-        for tuple in notes:
-            noteset.update(tuple.notes)
-        return noteset
 
     def __init__(self, notes: NoteSequence, adapter):
         self.notes = notes
         self.adapter = adapter
-        noteset = MidiProcessor.__get_notes(notes)
+        noteset = get_notes(notes)
         self.transposition = adapter.keyboard.calculate_transposition(noteset)
         print(f"Notes: {sorted(noteset)}")
         print(f"Transposing by {self.transposition}")
@@ -50,6 +44,13 @@ class MidiProcessor(object):
                 self.adapter.punch()
                 self.last_note = note
                 delay = 0
+
+
+def get_notes(notes: NoteSequence) -> Set[int]:
+    noteset = set()
+    for tuple in notes:
+        noteset.update(tuple.notes)
+    return noteset
 
 
 def __parse_midi(filename: str) -> NoteSequence:

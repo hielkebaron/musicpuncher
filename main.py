@@ -25,6 +25,9 @@ def run():
     #                    c   d   e   f   g   a   b   c   d   e   f   g   a   b   c
     keyboard = Keyboard([48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72])
 
+    #                    c   d   g   a   b   c   d   e   f   f+  g   g+  a   a+  b   c   c+  d   d+  e   f   f+  g   g+  a   a+   b   c   d   e
+    #keyboard = Keyboard([48, 50, 55, 57, 59, 60, 62, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82,  83, 84, 86, 88])
+
     if args.no_act or args.timed:
         adapter = DebugAdapter(keyboard, timed=args.timed)
     else:

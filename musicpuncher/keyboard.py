@@ -11,23 +11,23 @@ class Keyboard(object):
         return self.indexed[note]
 
     def calculate_transposition(self, noteset: Set[int]) -> int:
-        """
-        Calculates the transposition needed for the notes to fit on the keyboard
-        Throws an exception if it can not fit the notes
-        """
-        minimum = min(self.keyboard) - min(noteset)
-        maximum = max(self.keyboard) - max(noteset)
+        minimum = min(self.keyboard) - min(noteset) - 12
+        maximum = max(self.keyboard) - max(noteset) + 12
 
-        transposition = 0
-        while -transposition >= minimum or transposition <= maximum:
-            for signedTransposition in [transposition, -transposition]:
-                if self.__fits(noteset, signedTransposition):
-                    return signedTransposition
-            transposition += 1
-        raise RuntimeError(f"Cannot fit notes {noteset} on keyboard {self.keyboard}")
+        result = []
+        for transposition in range(minimum, maximum + 1):
+            unmapped = self.__get_unmapped_notes(noteset, transposition)
+            result.append((transposition, unmapped))
+        result.sort(key=lambda tp: len(tp[1]) * 100 + tp[0])
+        for tp in result:
+            print(f"{tp[0]}: {sorted(tp[1])}")
 
-    def __fits(self, notes, transposition: int) -> bool:
-        for note in notes:
-            if not (note + transposition) in self.indexed:
-                return False
-        return True
+        if len(result) > 0 and len(result[0][1]) == 0:
+            return result[0][0]
+
+        bestfits = '\n'.join([f"{tp[0]}: {sorted(tp[1])}" for tp in result[:3]])
+        raise RuntimeError(
+            f"Cannot fit\nnotes       {sorted(noteset)}\non keyboard {sorted(self.keyboard)}.\nBest fits:\n{bestfits}")
+
+    def __get_unmapped_notes(self, notes, transposition: int) -> Set[int]:
+        return {note for note in notes if not (note + transposition) in self.indexed}
