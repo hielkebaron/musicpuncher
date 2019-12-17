@@ -19,8 +19,6 @@ class Keyboard(object):
             unmapped = self.__get_unmapped_notes(noteset, transposition)
             result.append((transposition, unmapped))
         result.sort(key=lambda tp: len(tp[1]) * 100 + tp[0])
-        for tp in result:
-            print(f"{tp[0]}: {sorted(tp[1])}")
 
         if len(result) > 0 and len(result[0][1]) == 0:
             return result[0][0]

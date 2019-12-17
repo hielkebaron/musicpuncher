@@ -1,3 +1,4 @@
+import re
 from typing import List, Set
 
 from mido import MidiFile
@@ -76,8 +77,42 @@ def __print_notes(noteseq: NoteSequence):
         print(f"{notes.delay}: {notes.notes}")
 
 
-def punch(file: str, adapter):
+def __parseAdjustments(adjustments: str):
+    adjustmentDict = dict()
+    if adjustments == '':
+        return adjustmentDict
+    splitted = adjustments.split(',')
+    for split in splitted:
+        matchObj = re.match( r'(\d+)([+]+|[-]+)', split)
+        if matchObj:
+            note = int(matchObj.group(1))
+            adj = matchObj.group(2)
+            adjusted = note
+            for c in adj:
+                if c == '+':
+                    adjusted += 12
+                elif c == '-':
+                    adjusted -= 12
+            adjustmentDict[note] = adjusted
+        else:
+           raise RuntimeError(f"Illegal adjustment specification: {adjustments}")
+    return adjustmentDict
+
+def __adjust(noteseq: NoteSequence, adjustments: str):
+    adjustmentDict = __parseAdjustments(adjustments)
+    print(f"Adjustments: {adjustmentDict}")
+    for notes in noteseq:
+        newnotes = set()
+        for note in notes.notes:
+            if note in adjustmentDict:
+                newnotes.add(adjustmentDict[note])
+            else:
+                newnotes.add(note)
+        notes.notes = newnotes
+
+def punch(file: str, adapter, adjustments: str):
     notes = __parse_midi(file)
+    __adjust(notes, adjustments)
     # __print_notes(notes)
 
     processor = MidiProcessor(notes, adapter)
