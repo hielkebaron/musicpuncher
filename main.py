@@ -32,7 +32,7 @@ def run():
     #     [48, 50, 55, 57, 59, 60, 62, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84,
     #      86, 88])
 
-    if args.no_act or args.timed:
+    if args.no_act or args.timed or not args.out == None:
         adapter = DebugAdapter(keyboard, timed=args.timed)
     else:
         adapter = PiGPIOPuncherAdapter(keyboard, address=args.address, port=args.port)

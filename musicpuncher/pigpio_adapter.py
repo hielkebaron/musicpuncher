@@ -1,4 +1,5 @@
 from time import sleep, time
+from typing import List
 
 import pigpio
 
@@ -24,7 +25,7 @@ class PiGPIOPuncherAdapter(object):
         self.row_stepper = PiGPIOStepperMotor(self.pi, 22, 23, MIN_SPS, MAX_SPS, ACCELERATION)
         # self.zero_button = Button(2)
         self.punch_pin = 3
-        self.pi.set_mode(3, pigpio.OUTPUT)
+        self.pi.set_mode(self.punch_pin, pigpio.OUTPUT)
         self.position = None
 
     def reset(self):
@@ -40,15 +41,20 @@ class PiGPIOPuncherAdapter(object):
         print(f"move(note={note}, delay={delay})")
 
         calc_start = time()
-        moved = self.time_stepper.add_move_waveform(round(delay * self.TIME_STEPS))
+        wave1 = self.time_stepper.create_move_waveform(round(delay * self.TIME_STEPS))
+        wave2 = []
         if note >= 0:
             row = self.keyboard.get_index(note)
             delta = row - self.position
-            moved = moved or self.row_stepper.add_move_waveform(delta * self.ROW_STEPS)
+            wave2 = self.row_stepper.create_move_waveform(delta * self.ROW_STEPS)
             self.position = row
         calc_end = time()
+
+        self.__synchronize(wave1, wave2)
         print(f"Waveform created in {round((calc_end - calc_start) * 1000)} milliseconds")
-        if moved:
+        if len(wave1) > 0 or len(wave2):
+            self.__add_wave(wave1)
+            self.__add_wave(wave2)
             id = self.pi.wave_create()
             if id < 0:
                 raise RuntimeError(f"pigpio error on wave_create: {id}")
@@ -56,12 +62,40 @@ class PiGPIOPuncherAdapter(object):
             wave_start = time()
             print(f"Send waveform with {cbs} control blocks")
 
-            while self.pi.wave_tx_busy():  # wait for waveform to be sent
-                sleep(0.1)
+            self.__wait_for_wave()
             wave_end = time()
             print(f"Waveform took {round((wave_end - wave_start) * 1000)} milliseconds")
             self.pi.wave_clear()
         print()
+
+    def __wait_for_wave(self):
+        while self.pi.wave_tx_busy():  # wait for waveform to be sent
+            sleep(0.1)
+
+    def __add_wave(self, pulses: List[pigpio.pulse]):
+        if len(pulses) > 0:
+            self.pi.wave_add_generic(pulses)
+
+    def __synchronize(self, wave1: List[pigpio.pulse], wave2: List[pigpio.pulse]):
+        if wave1 == [] or wave2 == []:
+            return
+        def wavelength(pulses):
+            l = 0
+            for pulse in pulses:
+                l += pulse.delay
+            return l
+
+        def scale(pulses, factor):
+            for pulse in pulses:
+                pulse.delay = pulse.delay * factor
+
+        l1 = wavelength(wave1)
+        l2 = wavelength(wave2)
+
+        if l1 > l2:
+            scale(wave2, l1/l2)
+        if l2 > l1:
+            scale(wave1, l2/l1)
 
     def punch(self):
         print(f"punch")
@@ -102,9 +136,9 @@ class PiGPIOStepperMotor(object):
         self.pi.write(self.dir_pin, 0 if dir < 0 else 1)
 
     def __step(self, delay):
-        # self.step_pin.on()
+        self.pi.write(self.step_pin, 1)
         sleep(delay / 2)
-        # self.step_pin.off()
+        self.pi.write(self.step_pin, 0)
         sleep(delay / 2)
 
     def move_until(self, dir: int, condition):
@@ -113,7 +147,7 @@ class PiGPIOStepperMotor(object):
         while not condition():
             self.__step(self.max_delay)
 
-    def add_move_waveform(self, steps: int) -> bool:
+    def create_move_waveform(self, steps: int) -> List[pigpio.pulse]:
         self.__set_dir(-1 if steps < 0 else 1)
 
         pulses = []
@@ -136,7 +170,4 @@ class PiGPIOStepperMotor(object):
             pulses.append(pigpio.pulse(1 << self.step_pin, 0, delay >> 1))
             pulses.append(pigpio.pulse(0, 1 << self.step_pin, delay >> 1))
 
-        if len(pulses) > 0:
-            self.pi.wave_add_generic(pulses)
-            return True
-        return False
+        return pulses

@@ -1,4 +1,5 @@
 import re
+import sys
 from collections import deque
 from types import SimpleNamespace
 from typing import List, Set
@@ -22,10 +23,6 @@ class MidiProcessor(object):
     def __init__(self, notes: NoteSequence, adapter):
         self.notes = notes
         self.adapter = adapter
-        noteset = get_notes(notes)
-        self.transposition = adapter.keyboard.calculate_transposition(noteset)
-        print(f"Notes: {sorted(noteset)}")
-        print(f"Transposing by {self.transposition}")
 
     def process(self):
         self.adapter.reset()
@@ -38,8 +35,7 @@ class MidiProcessor(object):
         if len(notes) == 0:
             self.adapter.move(delay=delay)
         else:
-            note_list = sorted([note + self.transposition for note in notes])
-            # print(f"note_list: {note_list}")
+            note_list = sorted(notes)
             if abs(self.last_note - note_list[0]) > abs(self.last_note - note_list[-1]):
                 note_list.reverse()
             for note in note_list:
@@ -56,7 +52,7 @@ def get_notes(notes: NoteSequence) -> Set[int]:
     return noteset
 
 
-def __parse_midi(filename: str) -> NoteSequence:
+def parse_midi(filename: str) -> NoteSequence:
     """Returns a list of (timedelta, notelist) tuples"""
     notes = []
     with MidiFile(filename) as mid:
@@ -74,7 +70,7 @@ def __parse_midi(filename: str) -> NoteSequence:
     return notes
 
 
-def __print_notes(noteseq: NoteSequence):
+def print_notes(noteseq: NoteSequence):
     for notes in noteseq:
         print(f"{notes.delay}: {notes.notes}")
 
@@ -101,7 +97,7 @@ def __parseAdjustments(adjustments: str):
     return adjustmentDict
 
 
-def __adjust(noteseq: NoteSequence, adjustments: str):
+def adjust(noteseq: NoteSequence, adjustments: str):
     adjustmentDict = __parseAdjustments(adjustments)
     print(f"Adjustments: {adjustmentDict}")
     for notes in noteseq:
@@ -114,7 +110,21 @@ def __adjust(noteseq: NoteSequence, adjustments: str):
         notes.notes = newnotes
 
 
-def __write_midi(noteseq: NoteSequence, outfile):
+def transpose(noteseq: NoteSequence, adapter):
+    noteset = get_notes(noteseq)
+    transposition = adapter.keyboard.calculate_transposition(noteset)
+
+    for notes in noteseq:
+        newnotes = set()
+        for note in notes.notes:
+            newnotes.add(note + transposition)
+        notes.notes = newnotes
+
+    print(f"Notes: {sorted(noteset)}")
+    print(f"Transposed by {transposition}")
+
+
+def write_midi(noteseq: NoteSequence, outfile):
     mid = MidiFile()
     track = MidiTrack()
     mid.tracks.append(track)
@@ -142,18 +152,19 @@ def __write_midi(noteseq: NoteSequence, outfile):
             elapsed = timestamp
             off_queue.append(SimpleNamespace(note=note, time=timestamp + NOTE_LENGTH))
 
-    pop_until(99999999, elapsed)
+    pop_until(sys.maxsize, elapsed)
 
     mid.save(outfile)
 
 
 def punch(file: str, adapter, adjustments: str, outfile: str):
-    notes = __parse_midi(file)
-    __adjust(notes, adjustments)
-    __print_notes(notes)
+    notes = parse_midi(file)
+    adjust(notes, adjustments)
+    transpose(notes, adapter)
+    # print_notes(notes)
 
     if not outfile == None:
-        __write_midi(notes, outfile)
+        write_midi(notes, outfile)
     else:
         processor = MidiProcessor(notes, adapter)
         processor.process()
