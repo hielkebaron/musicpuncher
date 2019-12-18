@@ -1,7 +1,9 @@
 import re
+from collections import deque
+from types import SimpleNamespace
 from typing import List, Set
 
-from mido import MidiFile
+from mido import MidiFile, MidiTrack, Message
 
 MIN_VELOCITY = 20  # PPP
 
@@ -61,14 +63,14 @@ def __parse_midi(filename: str) -> NoteSequence:
         notes_on = set()
         delta = 0
         for msg in mid:
-            if msg.type == 'note_on' and msg.velocity >= MIN_VELOCITY:
-                notes_on.add(msg.note)
             if (msg.type == 'note_on' or msg.type == 'note_off') and msg.time != 0:
                 if len(notes_on) > 0:
                     notes.append(TimeNotes(delta, list(notes_on)))
                     delta = 0
                 delta += msg.time
                 notes_on.clear()
+            if msg.type == 'note_on' and msg.velocity >= MIN_VELOCITY:
+                notes_on.add(msg.note)
     return notes
 
 
@@ -83,7 +85,7 @@ def __parseAdjustments(adjustments: str):
         return adjustmentDict
     splitted = adjustments.split(',')
     for split in splitted:
-        matchObj = re.match( r'(\d+)([+]+|[-]+)', split)
+        matchObj = re.match(r'(\d+)([+]+|[-]+)', split)
         if matchObj:
             note = int(matchObj.group(1))
             adj = matchObj.group(2)
@@ -95,8 +97,9 @@ def __parseAdjustments(adjustments: str):
                     adjusted -= 12
             adjustmentDict[note] = adjusted
         else:
-           raise RuntimeError(f"Illegal adjustment specification: {adjustments}")
+            raise RuntimeError(f"Illegal adjustment specification: {adjustments}")
     return adjustmentDict
+
 
 def __adjust(noteseq: NoteSequence, adjustments: str):
     adjustmentDict = __parseAdjustments(adjustments)
@@ -110,11 +113,47 @@ def __adjust(noteseq: NoteSequence, adjustments: str):
                 newnotes.add(note)
         notes.notes = newnotes
 
-def punch(file: str, adapter, adjustments: str):
+
+def __write_midi(noteseq: NoteSequence, outfile):
+    mid = MidiFile()
+    track = MidiTrack()
+    mid.tracks.append(track)
+
+    track.append(Message('program_change', program=11, time=0))
+
+    TICKS_PER_SECOND = 1000
+    VELOCITY = 75
+    NOTE_LENGTH = 500
+    off_queue = deque([])
+
+    def pop_until(until, elapsed):
+        while len(off_queue) > 0 and off_queue[0].time <= until:
+            nxt = off_queue.popleft()
+            track.append(Message('note_off', note=nxt.note, velocity=0, time=nxt.time - elapsed))
+            elapsed = nxt.time
+        return elapsed
+
+    elapsed = 0
+    for notes in noteseq:
+        timestamp = elapsed + round(notes.delay * TICKS_PER_SECOND)
+        elapsed = pop_until(timestamp, elapsed)
+        for note in notes.notes:
+            track.append(Message('note_on', note=note, velocity=VELOCITY, time=timestamp - elapsed))
+            elapsed = timestamp
+            off_queue.append(SimpleNamespace(note=note, time=timestamp + NOTE_LENGTH))
+
+    pop_until(99999999, elapsed)
+
+    mid.save(outfile)
+
+
+def punch(file: str, adapter, adjustments: str, outfile: str):
     notes = __parse_midi(file)
     __adjust(notes, adjustments)
-    # __print_notes(notes)
+    __print_notes(notes)
 
-    processor = MidiProcessor(notes, adapter)
-
-    processor.process()
+    if not outfile == None:
+        __write_midi(notes, outfile)
+    else:
+        processor = MidiProcessor(notes, adapter)
+        processor.process()
