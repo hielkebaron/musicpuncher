@@ -24,7 +24,7 @@ class DebugAdapter(object):
         self.__delay(delay * 2)
         self.position = row
 
-    def punch(self):
+    def start_punch(self):
         print(f"punch")
         self.__delay(1)
 

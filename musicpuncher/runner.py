@@ -40,7 +40,7 @@ class MidiProcessor(object):
                 note_list.reverse()
             for note in note_list:
                 self.adapter.move(note=note, delay=delay)
-                self.adapter.punch()
+                self.adapter.start_punch()
                 self.last_note = note
                 delay = 0
 

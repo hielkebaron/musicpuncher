@@ -27,6 +27,7 @@ class PiGPIOPuncherAdapter(object):
         self.punch_pin = 3
         self.pi.set_mode(self.punch_pin, pigpio.OUTPUT)
         self.position = None
+        self.punch_completed_time = time()
 
     def reset(self):
         print('* reset *')
@@ -34,9 +35,8 @@ class PiGPIOPuncherAdapter(object):
         # self.row_stepper.move(self.ROW0)
         self.position = 0
 
-    def move(self, note: int=-1, delay: float=0):
+    def move(self, note: int = -1, delay: float = 0):
         print()
-        self.pi.wave_clear()
 
         print(f"move(note={note}, delay={delay})")
 
@@ -52,12 +52,15 @@ class PiGPIOPuncherAdapter(object):
 
         self.__synchronize(wave1, wave2)
         print(f"Waveform created in {round((calc_end - calc_start) * 1000)} milliseconds")
+        self.__wait_for_wave()  # wait until eventual punch wave is completed
         if len(wave1) > 0 or len(wave2):
+            self.pi.wave_clear()
             self.__add_wave(wave1)
             self.__add_wave(wave2)
             id = self.pi.wave_create()
             if id < 0:
                 raise RuntimeError(f"pigpio error on wave_create: {id}")
+            self.wait_for_punch()  # Ensure the puncher is raised again before sending the next wave
             cbs = self.pi.wave_send_once(id)
             wave_start = time()
             print(f"Send waveform with {cbs} control blocks")
@@ -68,9 +71,32 @@ class PiGPIOPuncherAdapter(object):
             self.pi.wave_clear()
         print()
 
+    def start_punch(self):
+        """
+           Initiates the punching.
+           Can be followed by a move call, otherwise use wait_for_punch to wait for completeness.
+        """
+        print(f"punch")
+        self.pi.wave_clear()
+        pulses = [pigpio.pulse(1 << self.punch_pin, 0, 200000),
+                  pigpio.pulse(0, 1 << self.punch_pin, 0)]
+        self.__add_wave(pulses)
+        id = self.pi.wave_create()
+        self.pi.wave_send_once(id)
+        self.punch_completed_time = time() + 0.3
+
     def __wait_for_wave(self):
         while self.pi.wave_tx_busy():  # wait for waveform to be sent
             sleep(0.1)
+
+    def wait_for_punch(self):
+        self.__wait_for_wave()
+        now = time()
+        if now < self.punch_completed_time:
+            print(f"Relaxing for {round((self.punch_completed_time - now) * 1000)} milliseconds")
+            sleep(self.punch_completed_time - now)
+        else:
+            print(f"Calculation took {round((now - self.punch_completed_time) * 1000)} milliseconds too much")
 
     def __add_wave(self, pulses: List[pigpio.pulse]):
         if len(pulses) > 0:
@@ -79,6 +105,7 @@ class PiGPIOPuncherAdapter(object):
     def __synchronize(self, wave1: List[pigpio.pulse], wave2: List[pigpio.pulse]):
         if wave1 == [] or wave2 == []:
             return
+
         def wavelength(pulses):
             l = 0
             for pulse in pulses:
@@ -87,22 +114,15 @@ class PiGPIOPuncherAdapter(object):
 
         def scale(pulses, factor):
             for pulse in pulses:
-                pulse.delay = pulse.delay * factor
+                pulse.delay = round(pulse.delay * factor)
 
         l1 = wavelength(wave1)
         l2 = wavelength(wave2)
 
         if l1 > l2:
-            scale(wave2, l1/l2)
+            scale(wave2, l1 / l2)
         if l2 > l1:
-            scale(wave1, l2/l1)
-
-    def punch(self):
-        print(f"punch")
-        self.pi.write(self.punch_pin, 1)
-        sleep(0.2)
-        self.pi.write(self.punch_pin, 0)
-        sleep(0.3)
+            scale(wave1, l2 / l1)
 
 
 def calculate_acceleration_profile(min_sps, max_sps, acceleration):
@@ -128,9 +148,6 @@ class PiGPIOStepperMotor(object):
 
         pi.set_mode(dir_pin, pigpio.OUTPUT)
         pi.set_mode(step_pin, pigpio.OUTPUT)
-
-        # print(f"Acceleration profile (ms): {[round(delay * 1000) for delay in self.acceleration_profile]}")
-        # print(f"pulses per second {[round(1 / delay) for delay in self.acceleration_profile]}")
 
     def __set_dir(self, dir: int):
         self.pi.write(self.dir_pin, 0 if dir < 0 else 1)
