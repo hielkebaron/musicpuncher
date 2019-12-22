@@ -16,12 +16,6 @@ def run():
     parser.add_argument("-a", "--address", help="address of the Music Puncher (defaults to 'localhost')",
                         default="localhost")
     parser.add_argument("-p", "--port", help="port of the pigpio daemon (defaults to 8888)", type=int, default=8888)
-    parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
-    parser.add_argument("--no-act", help="write commands to stdout but don't control an actual punching machine",
-                        action="store_true")
-    parser.add_argument("--timed",
-                        help="implies --no-act, but emulates some processing time so web can be tested more easily",
-                        action="store_true")
     parser.add_argument("--adjust", help="Adjust notes. Example: --adjust '32+,99--' will replace 32 by 44"
                                          " (+ one octave) and 99 by 75 (- two octaves)", default='')
     parser.add_argument("-o", "--out", help="Write the resulting midi to the given midi file instead of punching it")
