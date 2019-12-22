@@ -1,4 +1,9 @@
 import argparse
+import os
+import sys
+
+if os.getenv("MOCK_PIGPIO"):
+    sys.modules['pigpio'] = __import__('pigpio_mock')
 
 from musicpuncher.debug_adapter import DebugAdapter
 from musicpuncher.keyboard import Keyboard

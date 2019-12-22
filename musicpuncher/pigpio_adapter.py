@@ -51,7 +51,7 @@ class PiGPIOPuncherAdapter(object):
         calc_end = time()
 
         self.__synchronize(wave1, wave2)
-        print(f"Waveform created in {round((calc_end - calc_start) * 1000)} milliseconds")
+        # print(f"Waveform created in {round((calc_end - calc_start) * 1000)} milliseconds")
         self.__wait_for_wave()  # wait until eventual punch wave is completed
         if len(wave1) > 0 or len(wave2):
             self.pi.wave_clear()
@@ -63,11 +63,11 @@ class PiGPIOPuncherAdapter(object):
             self.wait_for_punch()  # Ensure the puncher is raised again before sending the next wave
             cbs = self.pi.wave_send_once(id)
             wave_start = time()
-            print(f"Send waveform with {cbs} control blocks")
+            # print(f"Send waveform with {cbs} control blocks")
 
             self.__wait_for_wave()
             wave_end = time()
-            print(f"Waveform took {round((wave_end - wave_start) * 1000)} milliseconds")
+            # print(f"Waveform took {round((wave_end - wave_start) * 1000)} milliseconds")
             self.pi.wave_clear()
         print()
 
@@ -93,10 +93,10 @@ class PiGPIOPuncherAdapter(object):
         self.__wait_for_wave()
         now = time()
         if now < self.punch_completed_time:
-            print(f"Relaxing for {round((self.punch_completed_time - now) * 1000)} milliseconds")
+            # print(f"Relaxing for {round((self.punch_completed_time - now) * 1000)} milliseconds")
             sleep(self.punch_completed_time - now)
-        else:
-            print(f"Calculation took {round((now - self.punch_completed_time) * 1000)} milliseconds too much")
+        # else:
+            # print(f"Calculation took {round((now - self.punch_completed_time) * 1000)} milliseconds too much")
 
     def __add_wave(self, pulses: List[pigpio.pulse]):
         if len(pulses) > 0:
