@@ -3,8 +3,12 @@ from time import time
 
 import pigpio
 
-INPUT = 0
-OUTPUT = 1
+INPUT = pigpio.INPUT
+OUTPUT = pigpio.OUTPUT
+
+PUD_OFF = pigpio.PUD_OFF
+PUD_DOWN = pigpio.PUD_DOWN
+PUD_UP = pigpio.PUD_UP
 
 pulse = pigpio.pulse
 
@@ -20,6 +24,12 @@ class pi():
 
     def set_mode(self, gpio, mode):
         pass
+
+    def set_pull_up_down(self, gpio, pud):
+        pass
+
+    def read(self, gpio):
+        return 1 if randint(0,9) == 0 else 0
 
     def write(self, gpio, level):
         pass

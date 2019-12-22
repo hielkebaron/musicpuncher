@@ -15,6 +15,8 @@ class PiGPIOPuncher(object):
     ROW0 = 100  # Number of steps from neutral position to ROW 0
     ROW_STEPS = 100  # Number of steps per row
     TIME_STEPS = 100  # Number of steps per time unit
+    CUTTER_POSITION = -3000  # number of steps after last punch (minus means number of steps before last punch)
+    END_FEED = 5000  # number of steps to feed after last punch or cut (whichever is last)
 
     def __init__(self, keyboard: Keyboard, notesequence: NoteSequence, address: str = 'localhost', port: int = 8888):
         self.pi = pigpio.pi(address, port)
@@ -23,11 +25,21 @@ class PiGPIOPuncher(object):
                 f"PI Not connected, make sure the pi is available on {address} and is running pigpiod on port {port}")
 
         self.keyboard = keyboard
+
         self.time_stepper = PiGPIOStepperMotor(self.pi, 17, 18, MIN_SPS, MAX_SPS, ACCELERATION)
         self.row_stepper = PiGPIOStepperMotor(self.pi, 22, 23, MIN_SPS, MAX_SPS, ACCELERATION)
-        # self.zero_button = Button(2)
+
+        self.zero_pin = 2
+        self.pi.set_mode(self.zero_pin, pigpio.INPUT)
+        self.pi.set_pull_up_down(self.zero_pin, pigpio.PUD_DOWN)
+
         self.punch_pin = 3
         self.pi.set_mode(self.punch_pin, pigpio.OUTPUT)
+
+        self.cutter_pin = 4
+        self.pi.set_mode(self.cutter_pin, pigpio.INPUT)
+        self.pi.set_pull_up_down(self.cutter_pin, pigpio.PUD_DOWN)
+
         self.position = None
         self.notesequence = notesequence
 
@@ -46,25 +58,57 @@ class PiGPIOPuncher(object):
             delay = round(delayNotes.delay * self.TIME_STEPS)
             for targetPosition in positions:
                 tuple = (delay, targetPosition - position)
-                if tuple != (0,0):
+                if tuple != (0, 0):
                     steps.append(tuple)
                 position = targetPosition
                 delay = 0
 
-        self.__calculate_waveforms(steps[0][0], steps[0][1])
-        for step in steps[1:]:
-            self.__move(lambda: self.__calculate_waveforms(step[0], step[1]))
+        self.do_run(steps)
+
+    def do_run(self, steps):
+        total_time_steps = 0
+        for step in steps:
+            total_time_steps += step[0]
+
+        cutter_step = total_time_steps + self.CUTTER_POSITION
+        did_cut = False
+
+        total_time_steps = 0
+        for idx, step in enumerate(steps):
+            if idx == 0:
+                self.__prepare_waveform(step[0], step[1])
+            self.__create_and_send_wave()  # run wave prepared for previous step
+            if idx < len(steps) - 1:
+                self.__prepare_waveform(steps[idx + 1][0], steps[idx + 1][1])
+            self.__wait_for_wave()
             self.__punch()
-        self.__move(lambda: None)
-        self.__punch()
+            total_time_steps += step[0]
+
+            if not did_cut and total_time_steps >= cutter_step:
+                self.__cut()
+                did_cut = True
+
+        if not did_cut:
+            if self.CUTTER_POSITION > 0:
+                self.__prepare_waveform(self.CUTTER_POSITION, 0)
+                self.__create_and_send_wave()
+                self.__wait_for_wave()
+            self.__cut()
+
+        if self.END_FEED > 0:
+            self.__prepare_waveform(self.END_FEED, 0)
+            self.__create_and_send_wave()
+            self.__wait_for_wave()
 
     def reset(self):
         print('* reset *')
-        # self.row_stepper.move_until(-1, self.zero_button.is_pressed)
-        # self.row_stepper.move(self.ROW0)
+        self.row_stepper.move_until(-1, lambda: self.pi.read(self.zero_pin) == 1)
+        self.__prepare_waveform(0, self.ROW0)
+        self.__create_and_send_wave()
+        self.__wait_for_wave()
         self.position = 0
 
-    def __calculate_waveforms(self, timesteps, notesteps):
+    def __prepare_waveform(self, timesteps, notesteps):
         self.pi.wave_clear()
         wave1 = self.time_stepper.create_move_waveform(timesteps)
         wave2 = self.row_stepper.create_move_waveform(notesteps)
@@ -72,21 +116,25 @@ class PiGPIOPuncher(object):
         self.__add_wave(wave1)
         self.__add_wave(wave2)
 
-    def __move(self, calculate_next):
-        id = self.pi.wave_create()
-
-        if id < 0:
-            raise RuntimeError(f"pigpio error on wave_create: {id}")
-        self.pi.wave_send_once(id)
-        calculate_next()
-        self.__wait_for_wave()
-
     def __punch(self):
         print(f"punch")
         self.pi.write(self.punch_pin, 1)
         sleep(0.2)
         self.pi.write(self.punch_pin, 0)
         sleep(0.3)
+
+    def __cut(self):
+        print(f"cut")
+        self.pi.write(self.cutter_pin, 1)
+        sleep(0.2)
+        self.pi.write(self.cutter_pin, 0)
+        sleep(0.3)
+
+    def __create_and_send_wave(self):
+        id = self.pi.wave_create()
+        if id < 0:
+            raise RuntimeError(f"pigpio error on wave_create: {id}")
+        self.pi.wave_send_once(id)
 
     def __wait_for_wave(self):
         while self.pi.wave_tx_busy():  # wait for waveform to be sent
@@ -165,20 +213,20 @@ class PiGPIOStepperMotor(object):
 
         profile = self.acceleration_profile
         proflen = len(profile)
-        min_delay = self.min_delay
+        min_delay_us = round(self.min_delay * 1000000)
         count = abs(steps)
         steps_to_stop = 0
         rem = count
         for i in range(0, count):
             rem -= 1
             if rem <= steps_to_stop:
-                delay = profile[rem]
+                delay_us = profile[rem]
             elif i < proflen:
-                delay = profile[i]
+                delay_us = profile[i]
                 steps_to_stop = i
             else:
-                delay = min_delay
-            pulses.append(pigpio.pulse(1 << self.step_pin, 0, delay >> 1))
-            pulses.append(pigpio.pulse(0, 1 << self.step_pin, delay >> 1))
+                delay_us = min_delay_us
+            pulses.append(pigpio.pulse(1 << self.step_pin, 0, delay_us >> 1))
+            pulses.append(pigpio.pulse(0, 1 << self.step_pin, delay_us >> 1))
 
         return pulses
