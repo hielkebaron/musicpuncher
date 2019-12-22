@@ -65,27 +65,21 @@ class PiGPIOPuncher(object):
         self.position = 0
 
     def __calculate_waveforms(self, timesteps, notesteps):
-        self.wave1 = self.time_stepper.create_move_waveform(timesteps)
-        self.wave2 = self.row_stepper.create_move_waveform(notesteps)
-        self.__synchronize(self.wave1, self.wave2)
+        self.pi.wave_clear()
+        wave1 = self.time_stepper.create_move_waveform(timesteps)
+        wave2 = self.row_stepper.create_move_waveform(notesteps)
+        self.__synchronize(wave1, wave2)
+        self.__add_wave(wave1)
+        self.__add_wave(wave2)
 
     def __move(self, calculate_next):
-        print()
-
-        self.pi.wave_clear()
-        self.__add_wave(self.wave1)
-        self.__add_wave(self.wave2)
         id = self.pi.wave_create()
 
         if id < 0:
             raise RuntimeError(f"pigpio error on wave_create: {id}")
         self.pi.wave_send_once(id)
-
         calculate_next()
         self.__wait_for_wave()
-        self.pi.wave_delete(id)
-        self.pi.wave_clear()
-        print()
 
     def __punch(self):
         print(f"punch")
