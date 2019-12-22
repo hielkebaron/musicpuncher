@@ -42,7 +42,7 @@ class pi():
             wavetime_us = 0
             for pulse in pulses:
                 wavetime_us += pulse.delay
-            print(f"Wavelength: {len(pulses)} ({round(totaltime_us / 1000)} ms)")
+            print(f"Wavelength: {len(pulses)} ({round(wavetime_us / 1000)} ms)")
             if wavetime_us > totaltime_us:
                 totaltime_us = wavetime_us
         self.wave_end_time = time() + totaltime_us / 1000000
