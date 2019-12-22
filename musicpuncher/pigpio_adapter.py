@@ -3,18 +3,20 @@ from typing import List
 
 import pigpio
 
+from .music import NoteSequence
+
 MIN_SPS = 1000  # steps per second
 MAX_SPS = 3000  # steps per second
 ACCELERATION = 1000  # SPS per second
 from .keyboard import Keyboard
 
 
-class PiGPIOPuncherAdapter(object):
+class PiGPIOPuncher(object):
     ROW0 = 100  # Number of steps from neutral position to ROW 0
     ROW_STEPS = 100  # Number of steps per row
     TIME_STEPS = 100  # Number of steps per time unit
 
-    def __init__(self, keyboard: Keyboard, address: str = 'localhost', port: int = 8888):
+    def __init__(self, keyboard: Keyboard, notesequence: NoteSequence, address: str = 'localhost', port: int = 8888):
         self.pi = pigpio.pi(address, port)
         if not self.pi.connected:
             raise RuntimeError(
@@ -27,7 +29,29 @@ class PiGPIOPuncherAdapter(object):
         self.punch_pin = 3
         self.pi.set_mode(self.punch_pin, pigpio.OUTPUT)
         self.position = None
-        self.punch_completed_time = time()
+        self.notesequence = notesequence
+
+    def run(self):
+        self.reset()
+
+        position = self.ROW0
+        steps = [] # list of tuple with (delay, note) steps for each hole
+        for delayNotes in self.notesequence:
+            if delayNotes.notes == []:
+                raise(RuntimeError("Empty note set is not supported, consolidate consecutive delays first"))
+            positions = sorted([self.ROW0 + (self.keyboard.get_index(note) * self.ROW_STEPS) for note in delayNotes.notes])
+            if abs(position-positions[-1]) < abs(position-positions[0]):
+                positions.reverse() # Start from nearest end
+            delay = round(delayNotes.delay * self.TIME_STEPS)
+            for targetPosition in positions:
+                steps.append((delay, targetPosition - position))
+                position = targetPosition
+                delay = 0
+
+        for step in steps:
+            self.__move(step[0], step[1])
+            self.__punch()
+
 
     def reset(self):
         print('* reset *')
@@ -35,22 +59,22 @@ class PiGPIOPuncherAdapter(object):
         # self.row_stepper.move(self.ROW0)
         self.position = 0
 
-    def move(self, note: int = -1, delay: float = 0):
+    def __move(self, timesteps, notesteps):
         print()
 
         # print(f"move(note={note}, delay={delay})")
 
-        wave1 = self.time_stepper.create_move_waveform(round(delay * self.TIME_STEPS))
-        wave2 = []
-        if note >= 0:
-            row = self.keyboard.get_index(note)
-            delta = row - self.position
-            wave2 = self.row_stepper.create_move_waveform(delta * self.ROW_STEPS)
-            self.position = row
+        wave1 = self.time_stepper.create_move_waveform(timesteps)
+        wave2 = self.row_stepper.create_move_waveform(notesteps)
+        # if note >= 0:
+        #     row = self.keyboard.get_index(note)
+        #     delta = row - self.position
+        #     wave2 = self.row_stepper.create_move_waveform(delta * self.ROW_STEPS)
+        #     self.position = row
 
         self.__synchronize(wave1, wave2)
         self.__wait_for_wave()  # wait until eventual punch wave is completed
-        if len(wave1) > 0 or len(wave2):
+        if len(wave1) > 0 or len(wave2) > 0:
             self.pi.wave_clear()
             self.__add_wave(wave1)
             self.__add_wave(wave2)
@@ -63,7 +87,7 @@ class PiGPIOPuncherAdapter(object):
             self.pi.wave_clear()
         print()
 
-    def punch(self):
+    def __punch(self):
         print(f"punch")
         self.pi.write(self.punch_pin, 1)
         sleep(0.2)
