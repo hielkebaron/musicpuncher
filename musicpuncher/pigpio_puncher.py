@@ -1,4 +1,4 @@
-from time import sleep, time
+from time import sleep
 from typing import List
 
 import pigpio
@@ -35,23 +35,28 @@ class PiGPIOPuncher(object):
         self.reset()
 
         position = self.ROW0
-        steps = [] # list of tuple with (delay, note) steps for each hole
+        steps = []  # list of tuple with (delay, note) steps for each hole
         for delayNotes in self.notesequence:
             if delayNotes.notes == []:
-                raise(RuntimeError("Empty note set is not supported, consolidate consecutive delays first"))
-            positions = sorted([self.ROW0 + (self.keyboard.get_index(note) * self.ROW_STEPS) for note in delayNotes.notes])
-            if abs(position-positions[-1]) < abs(position-positions[0]):
-                positions.reverse() # Start from nearest end
+                raise (RuntimeError("Empty note set is not supported, consolidate consecutive delays first"))
+            positions = sorted(
+                [self.ROW0 + (self.keyboard.get_index(note) * self.ROW_STEPS) for note in delayNotes.notes])
+            if abs(position - positions[-1]) < abs(position - positions[0]):
+                positions.reverse()  # Start from nearest end
             delay = round(delayNotes.delay * self.TIME_STEPS)
             for targetPosition in positions:
-                steps.append((delay, targetPosition - position))
+                tuple = (delay, targetPosition - position)
+                if tuple != (0,0):
+                    steps.append(tuple)
                 position = targetPosition
                 delay = 0
 
-        for step in steps:
-            self.__move(step[0], step[1])
+        self.__calculate_waveforms(steps[0][0], steps[0][1])
+        for step in steps[1:]:
+            self.__move(lambda: self.__calculate_waveforms(step[0], step[1]))
             self.__punch()
-
+        self.__move(lambda: None)
+        self.__punch()
 
     def reset(self):
         print('* reset *')
@@ -59,32 +64,26 @@ class PiGPIOPuncher(object):
         # self.row_stepper.move(self.ROW0)
         self.position = 0
 
-    def __move(self, timesteps, notesteps):
+    def __calculate_waveforms(self, timesteps, notesteps):
+        self.wave1 = self.time_stepper.create_move_waveform(timesteps)
+        self.wave2 = self.row_stepper.create_move_waveform(notesteps)
+        self.__synchronize(self.wave1, self.wave2)
+
+    def __move(self, calculate_next):
         print()
 
-        # print(f"move(note={note}, delay={delay})")
+        self.pi.wave_clear()
+        self.__add_wave(self.wave1)
+        self.__add_wave(self.wave2)
+        id = self.pi.wave_create()
 
-        wave1 = self.time_stepper.create_move_waveform(timesteps)
-        wave2 = self.row_stepper.create_move_waveform(notesteps)
-        # if note >= 0:
-        #     row = self.keyboard.get_index(note)
-        #     delta = row - self.position
-        #     wave2 = self.row_stepper.create_move_waveform(delta * self.ROW_STEPS)
-        #     self.position = row
+        if id < 0:
+            raise RuntimeError(f"pigpio error on wave_create: {id}")
+        self.pi.wave_send_once(id)
 
-        self.__synchronize(wave1, wave2)
-        self.__wait_for_wave()  # wait until eventual punch wave is completed
-        if len(wave1) > 0 or len(wave2) > 0:
-            self.pi.wave_clear()
-            self.__add_wave(wave1)
-            self.__add_wave(wave2)
-            id = self.pi.wave_create()
-            if id < 0:
-                raise RuntimeError(f"pigpio error on wave_create: {id}")
-            self.pi.wave_send_once(id)
-
-            self.__wait_for_wave()
-            self.pi.wave_clear()
+        calculate_next()
+        self.__wait_for_wave()
+        self.pi.wave_clear()
         print()
 
     def __punch(self):

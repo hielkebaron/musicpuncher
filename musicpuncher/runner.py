@@ -1,6 +1,6 @@
 from .music import parse_midi, adjust, transpose, write_midi
 from .keyboard import Keyboard
-from .pigpio_adapter import PiGPIOPuncher
+from .pigpio_puncher import PiGPIOPuncher
 
 # class MidiProcessor(object):
 #
