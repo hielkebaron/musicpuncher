@@ -38,7 +38,7 @@ class PiGPIOPuncherAdapter(object):
     def move(self, note: int = -1, delay: float = 0):
         print()
 
-        print(f"move(note={note}, delay={delay})")
+        # print(f"move(note={note}, delay={delay})")
 
         calc_start = time()
         wave1 = self.time_stepper.create_move_waveform(round(delay * self.TIME_STEPS))

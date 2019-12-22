@@ -5,9 +5,7 @@ import sys
 if os.getenv("MOCK_PIGPIO"):
     sys.modules['pigpio'] = __import__('pigpio_mock')
 
-from musicpuncher.debug_adapter import DebugAdapter
 from musicpuncher.keyboard import Keyboard
-from musicpuncher.pigpio_adapter import PiGPIOPuncherAdapter
 from musicpuncher.runner import punch
 
 
@@ -37,12 +35,7 @@ def run():
     #     [48, 50, 55, 57, 59, 60, 62, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84,
     #      86, 88])
 
-    if args.no_act or args.timed or not args.out == None:
-        adapter = DebugAdapter(keyboard, timed=args.timed)
-    else:
-        adapter = PiGPIOPuncherAdapter(keyboard, address=args.address, port=args.port)
-
-    punch(args.file, adapter, args.adjust, args.out)
+    punch(args.file, args.adjust, args.out, keyboard, address=args.address, port=args.port)
 
 
 run()

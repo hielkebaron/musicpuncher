@@ -6,6 +6,9 @@ from typing import List, Set
 
 from mido import MidiFile, MidiTrack, Message
 
+from .pigpio_adapter import PiGPIOPuncherAdapter
+from .keyboard import Keyboard
+
 MIN_VELOCITY = 20  # PPP
 
 
@@ -110,9 +113,9 @@ def adjust(noteseq: NoteSequence, adjustments: str):
         notes.notes = newnotes
 
 
-def transpose(noteseq: NoteSequence, adapter):
+def transpose(noteseq: NoteSequence, keyboard: Keyboard):
     noteset = get_notes(noteseq)
-    transposition = adapter.keyboard.calculate_transposition(noteset)
+    transposition = keyboard.calculate_transposition(noteset)
 
     for notes in noteseq:
         newnotes = set()
@@ -157,14 +160,15 @@ def write_midi(noteseq: NoteSequence, outfile):
     mid.save(outfile)
 
 
-def punch(file: str, adapter, adjustments: str, outfile: str):
+def punch(file: str, adjustments: str, outfile: str, keyboard: Keyboard, address: str = 'localhost', port: int = 8888):
     notes = parse_midi(file)
     adjust(notes, adjustments)
-    transpose(notes, adapter)
+    transpose(notes, keyboard)
     # print_notes(notes)
 
     if not outfile == None:
         write_midi(notes, outfile)
     else:
+        adapter = PiGPIOPuncherAdapter(keyboard, address=address, port=port)
         processor = MidiProcessor(notes, adapter)
         processor.process()
