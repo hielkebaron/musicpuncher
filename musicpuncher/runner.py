@@ -1,3 +1,5 @@
+from time import time
+
 from .keyboard import Keyboard
 from .music import parse_midi, adjust, transpose, write_midi
 from .pigpio_puncher import PiGPIOPuncher
@@ -13,4 +15,7 @@ def punch(file: str, adjustments: str, outfile: str, keyboard: Keyboard, address
         write_midi(notes, outfile)
     else:
         puncher = PiGPIOPuncher(keyboard, notes, address=address, port=port)
+        start_time = time()
         puncher.run()
+        end_time = time()
+        print(f"Done in {round(end_time-start_time)} seconds")
