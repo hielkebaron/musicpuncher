@@ -36,6 +36,9 @@ class pi():
     def wave_create(self):
         return randint(0, 100)
 
+    def wave_delete(self, wave_id):
+        pass
+
     def wave_send_once(self, wave_id):
         totaltime_us = 0
         for pulses in self.waves:

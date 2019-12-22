@@ -83,6 +83,7 @@ class PiGPIOPuncher(object):
 
         calculate_next()
         self.__wait_for_wave()
+        self.pi.wave_delete(id)
         self.pi.wave_clear()
         print()
 

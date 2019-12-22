@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 
-if os.getenv("MOCK_PIGPIO"):
+if os.getenv("MOCK_PIGPIO") == 'true':
     sys.modules['pigpio'] = __import__('pigpio_mock')
 
 from musicpuncher.keyboard import Keyboard
