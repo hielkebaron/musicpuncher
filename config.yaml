@@ -1,0 +1,46 @@
+---
+music-puncher:
+
+  #          c   d   e   f   g   a   b   c   d   e   f   g   a   b   c
+  keyboard: [48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72]
+
+  #          c   d   g   a   b   c   d   e   f   f+  g   g+  a   a+  b   c   c+  d   d+  e   f   f+  g   g+  a   a+   b   c   d   e
+  #keyboard: [48, 50, 55, 57, 59, 60, 62, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84,  86, 88]
+
+  idle-position: 10       # Number of steps from the zero-detector at which to position the head when idle
+  row0: 100               # Number of steps from the zero-detector to ROW 0 of the keyboard
+  tone-steps: 100         # Number of steps per tone
+  feed-steps: 100         # Number of steps per time unit
+  cutter-position: -3000  # number of steps after last punch (minus means number of steps before last punch)
+  end-feed: 5000          # number of steps to feed after last punch or cut (whichever is last)
+
+  feed-stepper:
+    enable-pin: 9
+    dir-pin: 17
+    step-pin: 18
+    min-sps: 1000         # minimum number of steps per second (low enough to instantly start or stop the motor)
+    max-sps: 3000         # maximum number of steps per second
+    acceleration: 1000    # number of steps per second added per second for acceleration
+    reverse-dir: false    # if true, direction output will be reversed
+
+  tone-stepper:
+    enable-pin: 10
+    dir-pin: 22
+    step-pin: 23
+    min-sps: 1000
+    max-sps: 3000
+    acceleration: 1000
+    reverse-dir: false
+
+  zero-button:
+    pin: 24
+
+  puncher:
+    pin: 11
+    on-length: 0.2        # nr of seconds for the on pulse
+    off-length: 0.3       # nr of seconds for the off pulse before continuing
+
+  cutter:
+    pin: 25
+    on-length: 0.2
+    off-length: 0.3

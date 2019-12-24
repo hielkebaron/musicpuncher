@@ -3,7 +3,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from musicpuncher.pigpio_puncher import calculate_acceleration_profile
+from musicpuncher.music_puncher import calculate_acceleration_profile
 
 
 def test_calculate_acceleration_profile1():

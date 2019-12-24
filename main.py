@@ -2,6 +2,8 @@ import argparse
 import os
 import sys
 
+import yaml
+
 if os.getenv("MOCK_PIGPIO") == 'true':
     sys.modules['pigpio'] = __import__('pigpio_mock')
 
@@ -21,15 +23,11 @@ def run():
     parser.add_argument("-o", "--out", help="Write the resulting midi to the given midi file instead of punching it")
     args = parser.parse_args()
 
-    #                    c   d   e   f   g   a   b   c   d   e   f   g   a   b   c
-    keyboard = Keyboard([48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72])
+    with open(r'config.yaml') as file:
+        config = yaml.load(file, Loader=yaml.FullLoader)
 
-    #                    c   d   g   a   b   c   d   e   f   f+  g   g+  a   a+  b   c   c+  d   d+  e   f   f+  g   g+  a   a+   b   c   d   e
-    # keyboard = Keyboard(
-    #     [48, 50, 55, 57, 59, 60, 62, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84,
-    #      86, 88])
-
-    punch(args.file, args.adjust, args.out, keyboard, address=args.address, port=args.port)
+    puncher_config = config['music-puncher']
+    punch(args.file, args.adjust, puncher_config, address=args.address, port=args.port, outfile = args.out)
 
 
 run()
