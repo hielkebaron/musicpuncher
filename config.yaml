@@ -12,7 +12,7 @@ music-puncher:
   tone-steps: 100         # Number of steps per tone
   feed-steps: 100         # Number of steps per time unit
   cutter-position: -3000  # number of steps after last punch (minus means number of steps before last punch)
-  end-feed: 5000          # number of steps to feed after last punch or cut (whichever is last)
+  end-feed: 1000          # number of steps to feed after last punch or cut (whichever is last)
 
   feed-stepper:
     enable-pin: 9
@@ -32,8 +32,9 @@ music-puncher:
     acceleration: 1000
     reverse-dir: false
 
-  zero-button:
-    pin: 24
+  # Use zero-button: absent if there is no zero button, puncher then needs to be aligned manually at 'idle-position'
+  zero-button: absent
+#    pin: 24
 
   puncher:
     pin: 11

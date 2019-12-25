@@ -1,4 +1,4 @@
-from time import sleep
+from time import sleep, time
 from typing import List
 
 import pigpio
@@ -23,7 +23,7 @@ class MusicPuncher(object):
 
         self.feed_stepper = PiGPIOStepperMotor(self.pi, config['feed-stepper'])
         self.tone_stepper = PiGPIOStepperMotor(self.pi, config['tone-stepper'])
-        self.zero_button = Button(self.pi, config['zero-button'])
+        self.zero_button = None if config['zero-button'] == 'absent' else Button(self.pi, config['zero-button'])
         self.puncher = Puncher(self.pi, config['puncher'])
         self.cutter = Cutter(self.pi, config['cutter'])
 
@@ -35,6 +35,9 @@ class MusicPuncher(object):
         self.end_feed = config['end-feed']
         self.position = None
         self.notesequence = notesequence
+
+        print(f"PiGPIO max pulses: {self.pi.wave_get_max_pulses()}")
+        print(f"PiGPIO max cbs:    {self.pi.wave_get_max_cbs()}")
 
     def run(self):
         self.reset()
@@ -103,17 +106,20 @@ class MusicPuncher(object):
 
     def reset(self):
         print('* reset *')
-        self.tone_stepper.move_until(-1, lambda: self.zero_button.is_on())
-        self.__prepare_waveform(0, self.idle_position)
-        self.__create_and_send_wave()
-        self.__wait_for_wave()
-        self.position = self.row0
+        if self.zero_button:
+            self.tone_stepper.move_until(-1, lambda: self.zero_button.is_on())
+            self.position = 0
+            self.__move(0, self.idle_position)
+        else:
+            print(f"Assuming that the puncher is manually aligned at step {self.idle_position}")
+            self.position = self.idle_position
 
     def __prepare_waveform(self, timesteps, notesteps):
         self.pi.wave_clear()
         wave1 = self.feed_stepper.create_move_waveform(timesteps)
         wave2 = self.tone_stepper.create_move_waveform(notesteps)
-        self.__synchronize(wave1, wave2)
+        self.prepared_wave_length = self.__synchronize(wave1, wave2) / 1000000
+
         self.__add_wave(wave1)
         self.__add_wave(wave2)
 
@@ -121,9 +127,18 @@ class MusicPuncher(object):
         id = self.pi.wave_create()
         if id < 0:
             raise RuntimeError(f"pigpio error on wave_create: {id}")
-        self.pi.wave_send_once(id)
+        cbs = self.pi.wave_send_once(id)
+        self.expected_wave_end_time = time() + self.prepared_wave_length
 
     def __wait_for_wave(self):
+        now = time()
+        expected_end = self.expected_wave_end_time + 0.015
+        if expected_end > now:
+            sleep(expected_end - now)
+            if self.pi.wave_tx_busy():
+                print(f"Not ready yet!")
+        else:
+            print(f"Missed by {now - expected_end} seconds")
         while self.pi.wave_tx_busy():  # wait for waveform to be sent
             sleep(0.1)
 
@@ -131,15 +146,19 @@ class MusicPuncher(object):
         if len(pulses) > 0:
             self.pi.wave_add_generic(pulses)
 
-    def __synchronize(self, wave1: List[pigpio.pulse], wave2: List[pigpio.pulse]):
-        if wave1 == [] or wave2 == []:
-            return
-
+    def __synchronize(self, wave1: List[pigpio.pulse], wave2: List[pigpio.pulse]) -> int:
+        """Scales the wave to the longest to have the same length, and returns the length in microseconds"""
         def wavelength(pulses):
             l = 0
             for pulse in pulses:
                 l += pulse.delay
             return l
+
+        if wave1 == []:
+            return wavelength(wave2)
+        if wave2 == []:
+            return wavelength(wave1)
+
 
         def scale(pulses, factor):
             for pulse in pulses:
@@ -150,8 +169,9 @@ class MusicPuncher(object):
 
         if l1 > l2:
             scale(wave2, l1 / l2)
-        if l2 > l1:
-            scale(wave1, l2 / l1)
+            return l1
+        scale(wave1, l2 / l1)
+        return l2
 
 
 def calculate_acceleration_profile(min_sps, max_sps, acceleration):
