@@ -132,13 +132,9 @@ class MusicPuncher(object):
 
     def __wait_for_wave(self):
         now = time()
-        expected_end = self.expected_wave_end_time + 0.015
+        expected_end = self.expected_wave_end_time + 0.001
         if expected_end > now:
             sleep(expected_end - now)
-            if self.pi.wave_tx_busy():
-                print(f"Not ready yet!")
-        else:
-            print(f"Missed by {now - expected_end} seconds")
         while self.pi.wave_tx_busy():  # wait for waveform to be sent
             sleep(0.1)
 
