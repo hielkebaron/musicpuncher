@@ -4,7 +4,7 @@ from collections import deque
 from types import SimpleNamespace
 from typing import List, Set
 
-from mido import MidiFile, MidiTrack, Message
+from mido import MidiFile, MidiTrack, Message, second2tick, MetaMessage
 
 from .keyboard import Keyboard
 
@@ -47,7 +47,7 @@ def parse_midi(filename: str) -> NoteSequence:
 
 def print_notes(noteseq: NoteSequence):
     for notes in noteseq:
-        print(f"{notes.delay}: {notes.notes}")
+        print(f"{notes.delay:0.4f}: {notes.notes}")
 
 
 def __parseAdjustments(adjustments: str):
@@ -100,13 +100,18 @@ def transpose(noteseq: NoteSequence, keyboard: Keyboard):
 
 
 def write_midi(noteseq: NoteSequence, outfile):
-    mid = MidiFile()
+    ticks_per_beat = 1000
+    us_per_tick = 100000
+    mid = MidiFile(ticks_per_beat=ticks_per_beat)
     track = MidiTrack()
     mid.tracks.append(track)
 
     track.append(Message('program_change', program=11, time=0))
+    track.append(MetaMessage('set_tempo', tempo=us_per_tick))
 
-    TICKS_PER_SECOND = 1000
+    # Default ticks/beat is 480, with 500000 us/beat
+    TICKS_PER_SECOND = second2tick(1, ticks_per_beat, us_per_tick)
+    print(f"Ticks per second: {TICKS_PER_SECOND}")
     VELOCITY = 75
     NOTE_LENGTH = 500
     off_queue = deque([])
