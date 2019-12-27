@@ -11,7 +11,7 @@ def punch(file: str, adjustments: str, puncher_config, outfile: str = None,
     notes = parse_midi(file)
     adjust(notes, adjustments)
     transpose(notes, keyboard)
-    print_notes(notes)
+    # print_notes(notes)
 
     if not outfile == None:
         write_midi(notes, outfile)
