@@ -60,3 +60,9 @@ class pi():
                 totaltime_us = wavetime_us
         self.wave_end_time = time() + totaltime_us / 1000000
         return 0
+
+    def wave_get_max_pulses(self):
+        return -1
+
+    def wave_get_max_cbs(self):
+        return -1

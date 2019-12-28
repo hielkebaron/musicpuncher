@@ -6,6 +6,9 @@ class Keyboard(object):
         self.keyboard = list(keyboard)
         self.indexed = {note: idx for idx, note in enumerate(self.keyboard)}
 
+    def size(self):
+        return len(self.keyboard)
+
     def get_index(self, note: int) -> int:
         """Returns the index of the note in the keyboard array"""
         return self.indexed[note]

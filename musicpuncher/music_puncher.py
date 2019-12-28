@@ -39,6 +39,18 @@ class MusicPuncher(object):
         print(f"PiGPIO max pulses: {self.pi.wave_get_max_pulses()}")
         print(f"PiGPIO max cbs:    {self.pi.wave_get_max_cbs()}")
 
+    def calibrate(self):
+        self.reset()
+        self.__move(0, self.row0 - self.position)
+        self.puncher.punch()
+        self.__move(0, (self.keyboard.size() - 1) * self.tone_steps - self.position)
+        self.puncher.punch()
+        self.__move(self.feed_steps * 2, 0)
+        self.puncher.punch()
+        self.__move(0, self.row0 - self.position)
+        self.puncher.punch()
+        self.__move(0, self.idle_position - self.position)
+
     def run(self):
         self.reset()
 
