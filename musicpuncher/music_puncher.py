@@ -66,7 +66,7 @@ class MusicPuncher(object):
             if delayNotes.notes == []:
                 raise (RuntimeError("Empty note set is not supported, consolidate consecutive delays first"))
             positions = sorted(
-                [self.row0 + (self.keyboard.get_index(note) * self.tone_steps) for note in delayNotes.notes])
+                [self.row0 + round(self.keyboard.get_index(note) * self.tone_steps) for note in delayNotes.notes])
             if abs(position - positions[-1]) < abs(position - positions[0]):
                 positions.reverse()  # Start from nearest end
             delay = round(delayNotes.delay * self.feed_steps)
