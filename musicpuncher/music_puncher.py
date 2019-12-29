@@ -12,8 +12,7 @@ from .keyboard import Keyboard
 
 
 class MusicPuncher(object):
-    def __init__(self, config, keyboard: Keyboard, notesequence: NoteSequence, address: str = 'localhost',
-                 port: int = 8888):
+    def __init__(self, config, keyboard: Keyboard, address: str = 'localhost', port: int = 8888):
         self.pi = pigpio.pi(address, port)
         if not self.pi.connected:
             raise RuntimeError(
@@ -21,9 +20,9 @@ class MusicPuncher(object):
 
         self.keyboard = keyboard
 
-        self.feed_stepper = PiGPIOStepperMotor(self.pi, config['feed-stepper'])
-        self.tone_stepper = PiGPIOStepperMotor(self.pi, config['tone-stepper'])
-        self.steppers = Steppers(self.pi, [self.feed_stepper, self.tone_stepper])
+        feed_stepper = PiGPIOStepperMotor(self.pi, config['feed-stepper'])
+        tone_stepper = PiGPIOStepperMotor(self.pi, config['tone-stepper'])
+        self.steppers = Steppers(self.pi, [feed_stepper, tone_stepper])
 
         self.zero_button = None if config['zero-button'] == 'absent' else Button(self.pi, config['zero-button'])
         self.puncher = Puncher(self.pi, config['puncher'])
@@ -36,7 +35,6 @@ class MusicPuncher(object):
         self.cutter_position = config['cutter-position']
         self.end_feed = config['end-feed']
         self.position = None
-        self.notesequence = notesequence
 
         print(f"PiGPIO max pulses: {self.pi.wave_get_max_pulses()}")
         print(f"PiGPIO max cbs:    {self.pi.wave_get_max_cbs()}")
@@ -53,12 +51,18 @@ class MusicPuncher(object):
         self.puncher.punch()
         self.__move(0, self.idle_position - self.position)
 
-    def run(self):
+    def run(self, notesequence: NoteSequence, ):
         self.reset()
 
+        steps = self.__calculate_all_steps(notesequence)
+        self.do_run(steps)
+        print(f"Head position: {self.position}")
+
+    def __calculate_all_steps(self, notesequence: NoteSequence):
+        """returns a list of tuples with (delay, note) steps for each hole"""
         position = self.position
-        steps = []  # list of tuple with (delay, note) steps for each hole
-        for delayNotes in self.notesequence:
+        steps = []
+        for delayNotes in notesequence:
             if delayNotes.notes == []:
                 raise (RuntimeError("Empty note set is not supported, consolidate consecutive delays first"))
             positions = sorted(
@@ -72,9 +76,7 @@ class MusicPuncher(object):
                     steps.append(tuple)
                 position = targetPosition
                 delay = 0
-
-        self.do_run(steps)
-        print(f"Head position: {self.position}")
+        return steps
 
     def do_run(self, steps):
         total_time_steps = 0
@@ -87,7 +89,7 @@ class MusicPuncher(object):
         total_time_steps = 0
         for idx, step in enumerate(steps):
             if idx == 0:
-                self.steppers.prepare_waveform([step[0], step[1]])
+                self.steppers.prepare_waveform(step)
             self.steppers.create_and_send_wave()  # run wave prepared for previous step
             if idx < len(steps) - 1:
                 self.steppers.prepare_waveform([steps[idx + 1][0], steps[idx + 1][1]])
@@ -121,7 +123,7 @@ class MusicPuncher(object):
     def reset(self):
         print('* reset *')
         if self.zero_button:
-            self.tone_stepper.move_until(-1, lambda: self.zero_button.is_on())
+            self.steppers.steppers[1].move_until(-1, lambda: self.zero_button.is_on())
             self.position = 0
             self.__move(0, self.idle_position)
         else:
