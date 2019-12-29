@@ -12,7 +12,7 @@ music-puncher:
   tone-steps: 100         # Number of steps per tone (distance between the rows)
   feed-steps: 100         # Number of steps to feed per second of music
   cutter-position: -3000  # number of steps after last punch (minus means number of steps before last punch)
-  end-feed: 1000          # number of steps to feed after last punch or cut (whichever is last)
+  end-feed: 5000          # number of steps to feed after last punch or cut (whichever is last)
 
   feed-stepper:
     enable-pin: 9

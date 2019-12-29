@@ -280,29 +280,37 @@ class Steppers:
             sleep(0.1)  # it should be really exceptional to we arrive here
 
     def __add_wave(self, pulses: List[pigpio.pulse]):
-        if len(pulses) > 0:
-            self.pi.wave_add_generic(pulses)
+        delay = 0
+        while len(pulses) > 0:
+            # Submit long waves in parts to avoid hitting pigpio package size limits
+            # This only marginally helps, because the next limit is total number of pulses
+            part = pulses[:5000]
+            pulses = pulses[5000:]
+            if delay > 0:
+                part.insert(0, pigpio.pulse(0, 0, delay))
+            delay += self.__wavelength(part[1:])
+            self.pi.wave_add_generic(part)
+
+    def __wavelength(self, pulses):
+        l = 0
+        for pulse in pulses:
+            l += pulse.delay
+        return l
 
     def __synchronize(self, waves: List[List[pigpio.pulse]]) -> int:
         """Scales the wave to the longest to have the same length, and returns the length in microseconds"""
-
-        def wavelength(pulses):
-            l = 0
-            for pulse in pulses:
-                l += pulse.delay
-            return l
 
         filtered = [wave for wave in waves if wave != []]
         if len(filtered) == 0:
             return 0
         if len(filtered) == 1:
-            return wavelength(filtered[0])
+            return self.__wavelength(filtered[0])
 
         def scale(pulses, factor):
             for pulse in pulses:
                 pulse.delay = round(pulse.delay * factor)
 
-        lengths = [wavelength(wave) for wave in filtered]
+        lengths = [self.__wavelength(wave) for wave in filtered]
 
         maxlen = max(lengths)
         for idx, wave in enumerate(filtered):
