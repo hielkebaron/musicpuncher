@@ -24,7 +24,7 @@ music-puncher:
     reverse-dir: false    # if true, direction output will be reversed
 
   tone-stepper:
-    enable-pin: 10
+    enable-pin: 9         # may be the same pin as the feed-stepper
     dir-pin: 22
     step-pin: 23
     min-sps: 1000
@@ -32,9 +32,9 @@ music-puncher:
     acceleration: 1000
     reverse-dir: false
 
-  # Use zero-button: absent if there is no zero button, puncher then needs to be aligned manually at 'idle-position'
-  zero-button: absent
-#    pin: 24
+  # Use zero-button. If not configured the puncher needs to be aligned manually at 'idle-position'
+  #  zero-button:
+  #    pin: 24
 
   puncher:
     pin: 11
@@ -45,3 +45,11 @@ music-puncher:
     pin: 25
     on-length: 0.2
     off-length: 0.3
+
+  status-led:
+    red-pin: 10
+    green-pin: 14
+    blue-pin: 15
+    rgb-on: [255, 165, 0]
+    rgb-off: [0, 255, 0]
+    rgb-error: [255, 0, 0] # not used yet

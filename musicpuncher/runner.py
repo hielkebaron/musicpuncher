@@ -18,7 +18,11 @@ def punch(file: str, adjustments: str, puncher_config, outfile: str = None,
     else:
         puncher = MusicPuncher(puncher_config, keyboard, address=address, port=port)
         start_time = time()
-        puncher.run(notes)
+        try:
+            puncher.run(notes)
+        except KeyboardInterrupt:
+            print("Interrupted!")
+            pass
         end_time = time()
         print(f"Done in {round(end_time - start_time)} seconds")
 

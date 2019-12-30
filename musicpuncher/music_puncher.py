@@ -24,7 +24,8 @@ class MusicPuncher(object):
         tone_stepper = PiGPIOStepperMotor(self.pi, config['tone-stepper'])
         self.steppers = Steppers(self.pi, [feed_stepper, tone_stepper])
 
-        self.zero_button = None if config['zero-button'] == 'absent' else Button(self.pi, config['zero-button'])
+        self.zero_button = Button(self.pi, config['zero-button']) if 'zero-button' in config else None
+        self.status_led = StatusLed(self.pi, config['status-led']) if 'status-led' in config else DummyStatusLed()
         self.puncher = Puncher(self.pi, config['puncher'])
         self.cutter = Cutter(self.pi, config['cutter'])
 
@@ -39,24 +40,57 @@ class MusicPuncher(object):
         print(f"PiGPIO max pulses: {self.pi.wave_get_max_pulses()}")
         print(f"PiGPIO max cbs:    {self.pi.wave_get_max_cbs()}")
 
+    def on(self):
+        print(f"Switching the music puncher ON")
+        self.status_led.status_on()
+        self.steppers.on()
+
+    def off(self, reset=False):
+        if reset:
+            try:
+                self.reset()
+            except Exception as e:
+                print(f"Failed reset: {repr(e)}")
+
+        print(f"Switching the music puncher OFF")
+        try:
+            self.steppers.off()
+            self.status_led.status_off()
+        except Exception as e:
+            print(f"Failed to switch the music puncher off: {repr(e)}")
+
     def calibrate(self):
+        try:
+            self.__do_calibrate()
+        except:
+            self.off(reset=True)
+            raise
+
+    def __do_calibrate(self):
+        self.on()
         self.reset()
         self.__move(0, self.row0 - self.position)
         self.puncher.punch()
-        self.__move(0, (self.keyboard.size() - 1) * self.tone_steps - self.position)
+        self.__move(0, round((self.keyboard.size() - 1) * self.tone_steps) - self.position)
         self.puncher.punch()
         self.__move(self.feed_steps * 2, 0)
         self.puncher.punch()
         self.__move(0, self.row0 - self.position)
         self.puncher.punch()
         self.__move(0, self.idle_position - self.position)
+        self.off()
 
     def run(self, notesequence: NoteSequence, ):
-        self.reset()
+        self.on()
+        try:
+            self.reset()
 
-        steps = self.__calculate_all_steps(notesequence)
-        self.do_run(steps)
-        print(f"Head position: {self.position}")
+            steps = self.__calculate_all_steps(notesequence)
+            self.do_run(steps)
+            self.off()
+        except:
+            self.off(reset=True)
+            raise
 
     def __calculate_all_steps(self, notesequence: NoteSequence):
         """returns a list of tuples with (delay, note) steps for each hole"""
@@ -151,11 +185,10 @@ class Puncher:
         self.pin = config['pin']
         self.on_length = config['on-length']
         self.off_length = config['off-length']
-        self.pi.set_mode(self.pin, pigpio.INPUT)
-        self.pi.set_pull_up_down(self.pin, pigpio.PUD_DOWN)
+        self.pi.set_mode(self.pin, pigpio.OUTPUT)
 
     def punch(self):
-        print(f"punch")
+        # print(f"punch")
         self.pi.write(self.pin, 1)
         sleep(self.on_length)
         self.pi.write(self.pin, 0)
@@ -168,16 +201,55 @@ class Cutter:
         self.pin = config['pin']
         self.on_length = config['on-length']
         self.off_length = config['off-length']
-        self.pi.set_mode(self.pin, pigpio.INPUT)
-        self.pi.set_pull_up_down(self.pin, pigpio.PUD_DOWN)
+        self.pi.set_mode(self.pin, pigpio.OUTPUT)
 
     def cut(self):
-        print(f"cut")
+        # print(f"cut")
         self.pi.write(self.pin, 1)
         sleep(self.on_length)
         self.pi.write(self.pin, 0)
         sleep(self.off_length)
 
+
+class StatusLed:
+    def __init__(self, pi: pigpio.pi, config):
+        self.pi = pi
+        self.pins = [config['red-pin'], config['green-pin'], config['blue-pin']]
+        self.rgb_on = config['rgb-on']
+        self.rgb_off = config['rgb-off']
+        self.rgb_error = config['rgb-error']
+
+        for pin in self.pins:
+            self.pi.set_mode(pin, pigpio.OUTPUT)
+
+    def status_on(self):
+        self.__set_rgb(self.rgb_on)
+
+    def status_off(self):
+        self.__set_rgb(self.rgb_off)
+
+    def status_error(self):
+        self.__set_rgb(self.rgb_error)
+
+    def __set_rgb(self, rgb: List[int]):
+        for idx, value in enumerate(rgb):
+            pin = self.pins[idx]
+            if value == 0:
+                self.pi.write(pin, 0)
+            elif value == 255:
+                self.pi.write(pin, 1)
+            else:
+                self.pi.set_PWM_dutycycle(pin, value)
+
+class DummyStatusLed:
+    def status_on(self):
+        pass
+
+    def status_off(self):
+        pass
+
+    def status_error(self):
+        pass
 
 def calculate_acceleration_profile(min_sps, max_sps, acceleration):
     "Returns a list of delays in microseconds"
@@ -194,8 +266,10 @@ class PiGPIOStepperMotor(object):
 
     def __init__(self, pi: pigpio.pi, config):
         self.pi = pi
+        self.enable_pin = config['enable-pin']
         self.dir_pin = config['dir-pin']
         self.step_pin = config['step-pin']
+        self.reverse = config['reverse-dir']
         self.acceleration_profile = calculate_acceleration_profile(config['min-sps'], config['max-sps'],
                                                                    config['acceleration'])
         self.min_delay = 1 / config['max-sps']
@@ -204,7 +278,14 @@ class PiGPIOStepperMotor(object):
         pi.set_mode(self.dir_pin, pigpio.OUTPUT)
         pi.set_mode(self.step_pin, pigpio.OUTPUT)
 
+    def on(self):
+        self.pi.write(self.enable_pin, 1)
+
+    def off(self):
+        self.pi.write(self.enable_pin, 0)
+
     def __set_dir(self, dir: int):
+        dir = dir * -1 if self.reverse else dir
         self.pi.write(self.dir_pin, 0 if dir < 0 else 1)
 
     def __step(self, delay):
@@ -251,6 +332,14 @@ class Steppers:
     def __init__(self, pi: pigpio.pi, steppers: List[PiGPIOStepperMotor]):
         self.pi = pi
         self.steppers = steppers
+
+    def on(self):
+        for stepper in self.steppers:
+            stepper.on()
+
+    def off(self):
+        for stepper in self.steppers:
+            stepper.off()
 
     def prepare_waveform(self, steps: List[int]):
         """
