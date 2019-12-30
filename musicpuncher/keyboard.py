@@ -1,4 +1,5 @@
-from typing import Set, Iterator
+import sys
+from typing import Set, Iterator, Dict
 
 
 class Keyboard(object):
@@ -29,6 +30,20 @@ class Keyboard(object):
         bestfits = '\n'.join([f"{tp[0]}: {sorted(tp[1])}" for tp in result[:3]])
         raise RuntimeError(
             f"Cannot fit\nnotes       {sorted(noteset)}\non keyboard {sorted(self.keyboard)}.\nBest fits:\n{bestfits}")
+
+    def calculate_adjustments(self, noteset: Set[int]) -> Dict[int, int]:
+        adjustments = dict()
+        for note in noteset:
+            adjustment = sys.maxsize
+            for key in self.keyboard:
+                diff = key - note
+                if diff % 12 == 0 and abs(diff) < abs(adjustment):
+                    adjustment = diff
+            if adjustment == sys.maxsize:
+                print(f"Can not fit note {note} on the keyboard, skipping!")
+            if adjustment != 0:
+                adjustments[note] = note + diff
+        return adjustments
 
     def __get_unmapped_notes(self, notes, transposition: int) -> Set[int]:
         return {note for note in notes if not (note + transposition) in self.indexed}

@@ -2,7 +2,7 @@ import re
 import sys
 from collections import deque
 from types import SimpleNamespace
-from typing import List, Set
+from typing import List, Set, Dict
 
 from mido import MidiFile, MidiTrack, Message, second2tick, MetaMessage
 
@@ -50,7 +50,7 @@ def print_notes(noteseq: NoteSequence):
         print(f"{notes.delay:0.4f}: {notes.notes}")
 
 
-def __parseAdjustments(adjustments: str):
+def __parseAdjustments(adjustments: str) -> Dict[int, int]:
     adjustmentDict = dict()
     if adjustments == '':
         return adjustmentDict
@@ -72,8 +72,7 @@ def __parseAdjustments(adjustments: str):
     return adjustmentDict
 
 
-def adjust(noteseq: NoteSequence, adjustments: str):
-    adjustmentDict = __parseAdjustments(adjustments)
+def __apply_adjustments(noteseq: NoteSequence, adjustmentDict: Dict[int, int]):
     print(f"Adjustments: {adjustmentDict}")
     for notes in noteseq:
         newnotes = set()
@@ -85,19 +84,33 @@ def adjust(noteseq: NoteSequence, adjustments: str):
         notes.notes = newnotes
 
 
-def transpose(noteseq: NoteSequence, keyboard: Keyboard):
-    noteset = get_notes(noteseq)
-    transposition = keyboard.calculate_transposition(noteset)
-
+def __apply_transposition(noteseq: NoteSequence, transposition: int):
     for notes in noteseq:
         newnotes = set()
         for note in notes.notes:
             newnotes.add(note + transposition)
         notes.notes = newnotes
 
-    print(f"Notes: {sorted(noteset)}")
-    print(f"Transposed by {transposition}")
 
+def adjust(noteseq: NoteSequence, adjustments: str):
+    adjustmentDict = __parseAdjustments(adjustments)
+    __apply_adjustments(noteseq, adjustmentDict)
+
+
+def transpose(noteseq: NoteSequence, keyboard: Keyboard):
+    noteset = get_notes(noteseq)
+    transposition = keyboard.calculate_transposition(noteset)
+    __apply_transposition(noteseq, transposition)
+    # print(f"Notes: {sorted(noteset)}")
+    # print(f"Transposed by {transposition}")
+
+
+def autofit(noteseq: NoteSequence, keyboard: Keyboard, transposition: int):
+    noteset = get_notes(noteseq)
+    __apply_transposition(noteseq, transposition)
+
+    adjustments = keyboard.calculate_adjustments(noteset)
+    __apply_adjustments(noteseq, adjustments)
 
 def write_midi(noteseq: NoteSequence, outfile):
     ticks_per_beat = 1000

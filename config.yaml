@@ -5,7 +5,7 @@ music-puncher:
   keyboard: [48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72]
 
   #          c   d   g   a   b   c   d   e   f   f+  g   g+  a   a+  b   c   c+  d   d+  e   f   f+  g   g+  a   a+   b   c   d   e
-  #keyboard: [48, 50, 55, 57, 59, 60, 62, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84,  86, 88]
+#  keyboard: [48, 50, 55, 57, 59, 60, 62, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84,  86, 88]
 
   idle-position: 10       # Number of steps from the zero-detector at which to position the head when idle
   row0: 100               # Number of steps from the zero-detector to ROW 0 of the keyboard
