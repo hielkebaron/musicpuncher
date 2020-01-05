@@ -32,7 +32,7 @@ music-puncher:
     acceleration: 1000
     reverse-dir: false
 
-  # Use zero-button. If not configured the puncher needs to be aligned manually at 'idle-position'
+  # Use zero-button. Optional, if not configured the puncher needs to be aligned manually at 'idle-position'
   #  zero-button:
   #    pin: 24
 
@@ -46,6 +46,7 @@ music-puncher:
     on-length: 0.2
     off-length: 0.3
 
+  # Optional control for an RGB status led. Pins may also be connected to 3 individual leds.
   status-led:
     red-pin: 10
     green-pin: 14

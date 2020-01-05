@@ -1,3 +1,4 @@
+from enum import auto, Enum
 from time import sleep, time
 from typing import List
 
@@ -42,7 +43,7 @@ class MusicPuncher(object):
 
     def on(self):
         print(f"Switching the music puncher ON")
-        self.status_led.status_on()
+        self.status_led.set(Status.ON)
         self.steppers.on()
 
     def off(self, reset=False):
@@ -55,7 +56,7 @@ class MusicPuncher(object):
         print(f"Switching the music puncher OFF")
         try:
             self.steppers.off()
-            self.status_led.status_off()
+            self.status_led.set(Status.OFF)
         except Exception as e:
             print(f"Failed to switch the music puncher off: {repr(e)}")
 
@@ -211,45 +212,35 @@ class Cutter:
         sleep(self.off_length)
 
 
+class Status(Enum):
+    ON = auto()
+    OFF = auto()
+    ERROR = auto()
+
+
 class StatusLed:
     def __init__(self, pi: pigpio.pi, config):
         self.pi = pi
         self.pins = [config['red-pin'], config['green-pin'], config['blue-pin']]
-        self.rgb_on = config['rgb-on']
-        self.rgb_off = config['rgb-off']
-        self.rgb_error = config['rgb-error']
-
+        self.colors = {
+            Status.ON: config['rgb-on'],
+            Status.OFF: config['rgb-off'],
+            Status.ERROR: config['rgb-error']
+        }
         for pin in self.pins:
             self.pi.set_mode(pin, pigpio.OUTPUT)
 
-    def status_on(self):
-        self.__set_rgb(self.rgb_on)
-
-    def status_off(self):
-        self.__set_rgb(self.rgb_off)
-
-    def status_error(self):
-        self.__set_rgb(self.rgb_error)
-
-    def __set_rgb(self, rgb: List[int]):
+    def set(self, status: Status):
+        rgb = self.colors[status]
         for idx, value in enumerate(rgb):
             pin = self.pins[idx]
-            if value == 0:
-                self.pi.write(pin, 0)
-            elif value == 255:
-                self.pi.write(pin, 1)
-            else:
-                self.pi.set_PWM_dutycycle(pin, value)
+            self.pi.set_PWM_dutycycle(pin, value)
+
 
 class DummyStatusLed:
-    def status_on(self):
+    def set(self, status: Status):
         pass
 
-    def status_off(self):
-        pass
-
-    def status_error(self):
-        pass
 
 def calculate_acceleration_profile(min_sps, max_sps, acceleration):
     "Returns a list of delays in microseconds"
