@@ -89,6 +89,7 @@ class MusicPuncher(object):
             steps = self.__calculate_all_steps(notesequence)
             self.do_run(steps)
             self.off()
+            print(f"Reset is done")
         except:
             self.off(reset=True)
             raise
@@ -279,6 +280,7 @@ class PiGPIOStepperMotor(object):
     def __set_dir(self, dir: int):
         dir = dir * -1 if self.reverse else dir
         self.pi.write(self.dir_pin, 0 if dir < 0 else 1)
+        print(f"DIR: {dir}")
 
     def __step(self, delay):
         self.pi.write(self.step_pin, 1)
@@ -338,6 +340,7 @@ class Steppers:
            Prepares the next wave form. Can be called between create_and_send_wave and wait_for_wave in order to prepare
            the next waveform while executing the previous one
         """
+        print(f"Prepare waveforms for {steps}")
         self.pi.wave_clear()
         waves = [self.steppers[idx].create_move_waveform(s) for idx, s in enumerate(steps)]
         self.prepared_wave_length = self.__synchronize(waves) / 1000000
