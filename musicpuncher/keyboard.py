@@ -41,8 +41,8 @@ class Keyboard(object):
                     adjustment = diff
             if adjustment == sys.maxsize:
                 print(f"Can not fit note {note} on the keyboard, skipping!")
-            if adjustment != 0:
-                adjustments[note] = note + diff
+            elif adjustment != 0:
+                adjustments[note] = note + adjustment
         return adjustments
 
     def __get_unmapped_notes(self, notes, transposition: int) -> Set[int]:

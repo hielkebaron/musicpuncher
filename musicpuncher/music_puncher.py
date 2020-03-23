@@ -116,6 +116,7 @@ class MusicPuncher(object):
     def do_run(self, steps):
         total_time_steps = 0
         for step in steps:
+            print(f"{step[1]}")
             total_time_steps += step[0]
 
         cutter_step = total_time_steps + self.cutter_position
