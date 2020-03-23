@@ -124,12 +124,17 @@ class MusicPuncher(object):
 
         total_time_steps = 0
         for idx, step in enumerate(steps):
-            if idx == 0:
-                self.steppers.prepare_waveform(step)
-            self.steppers.create_and_send_wave()  # run wave prepared for previous step
-            if idx < len(steps) - 1:
-                self.steppers.prepare_waveform([steps[idx + 1][0], steps[idx + 1][1]])
+            # if idx == 0:
+            #     self.steppers.prepare_waveform(step)
+            # self.steppers.create_and_send_wave()  # run wave prepared for previous step
+            # if idx < len(steps) - 1:
+            #     self.steppers.prepare_waveform([steps[idx + 1][0], steps[idx + 1][1]])
+            # self.steppers.wait_for_wave()
+
+            self.steppers.prepare_waveform(step)
+            self.steppers.create_and_send_wave()
             self.steppers.wait_for_wave()
+
             self.position += step[1]
             self.puncher.punch()
             total_time_steps += step[0]
@@ -280,7 +285,7 @@ class PiGPIOStepperMotor(object):
     def __set_dir(self, dir: int):
         dir = dir * -1 if self.reverse else dir
         self.pi.write(self.dir_pin, 0 if dir < 0 else 1)
-        print(f"DIR: {dir}")
+        # print(f"DIR: {0 if dir < 0 else 1}")
 
     def __step(self, delay):
         self.pi.write(self.step_pin, 1)
@@ -340,7 +345,7 @@ class Steppers:
            Prepares the next wave form. Can be called between create_and_send_wave and wait_for_wave in order to prepare
            the next waveform while executing the previous one
         """
-        print(f"Prepare waveforms for {steps}")
+        # print(f"Prepare waveforms for {steps}")
         self.pi.wave_clear()
         waves = [self.steppers[idx].create_move_waveform(s) for idx, s in enumerate(steps)]
         self.prepared_wave_length = self.__synchronize(waves) / 1000000
