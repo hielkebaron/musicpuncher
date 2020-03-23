@@ -28,6 +28,9 @@ class pi():
     def set_pull_up_down(self, gpio, pud):
         pass
 
+    def set_PWM_dutycycle(self, a, b):
+        pass
+
     def read(self, gpio):
         return 1 if randint(0,9) == 0 else 0
 
