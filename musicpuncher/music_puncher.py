@@ -89,7 +89,6 @@ class MusicPuncher(object):
             steps = self.__calculate_all_steps(notesequence)
             self.do_run(steps)
             self.off()
-            print(f"Reset is done")
         except:
             self.off(reset=True)
             raise
@@ -166,6 +165,7 @@ class MusicPuncher(object):
         else:
             print(f"Assuming that the puncher is manually aligned at step {self.idle_position}")
             self.position = self.idle_position
+        print('* reset *')
 
 
 class Button:
