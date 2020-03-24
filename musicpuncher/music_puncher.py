@@ -162,7 +162,7 @@ class MusicPuncher(object):
         self.position += tonesteps
 
     def reset(self):
-        print('* reset *')
+        print('> reset')
         if self.zero_button:
             self.steppers.steppers[1].move_until(-1, lambda: self.zero_button.is_on())
             self.position = 0
@@ -170,7 +170,7 @@ class MusicPuncher(object):
         else:
             print(f"Assuming that the puncher is manually aligned at step {self.idle_position}")
             self.position = self.idle_position
-        print('* reset *')
+        print('< reset')
 
 
 class Button:
@@ -282,10 +282,15 @@ class PiGPIOStepperMotor(object):
     def off(self):
         self.pi.write(self.enable_pin, 0)
 
-    def __set_dir(self, dir: int):
-        dir = dir * -1 if self.reverse else dir
-        self.pi.write(self.dir_pin, 0 if dir < 0 else 1)
-        # print(f"DIR: {0 if dir < 0 else 1}")
+    # def __set_dir(self, dir: int):
+    #     dir = dir * -1 if self.reverse else dir
+    #     self.pi.write(self.dir_pin, 0 if dir < 0 else 1)
+
+    def __is_dir_enable(self, steps: int) -> bool:
+        enable = steps > 0
+        if self.reverse:
+            enable = not enable
+        return enable
 
     def __step(self, delay):
         self.pi.write(self.step_pin, 1)
@@ -295,12 +300,19 @@ class PiGPIOStepperMotor(object):
 
     def move_until(self, dir: int, condition):
         """Slowly moves the motor in the given direction (-1,+1) until the condition becomes true"""
-        self.__set_dir(dir)
+        # self.__set_dir(dir)
+        self.pi.write(self.dir_pin, 1 if self.__is_dir_enable(dir) else 0)
         while not condition():
             self.__step(self.max_delay)
 
     def create_move_waveform(self, steps: int) -> List[pigpio.pulse]:
-        self.__set_dir(-1 if steps < 0 else 1)
+        # self.__set_dir(-1 if steps < 0 else 1)
+        dir_enable = 0
+        dir_disable = 0
+        if self.__is_dir_enable(steps):
+            dir_enable = 1 << self.dir_pin
+        else:
+            dir_disable = 1 << self.dir_pin
 
         pulses = []
 
@@ -319,8 +331,10 @@ class PiGPIOStepperMotor(object):
                 steps_to_stop = i
             else:
                 delay_us = min_delay_us
-            pulses.append(pigpio.pulse(1 << self.step_pin, 0, delay_us >> 1))
+            pulses.append(pigpio.pulse(1 << self.step_pin | dir_enable, dir_disable, delay_us >> 1))
             pulses.append(pigpio.pulse(0, 1 << self.step_pin, delay_us >> 1))
+            dir_enable = 0
+            dir_disable = 0
 
         return pulses
 

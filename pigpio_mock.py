@@ -54,14 +54,18 @@ class pi():
 
     def wave_send_once(self, wave_id):
         totaltime_us = 0
+        print(f"{len(self.waves)} wave(s)")
         for pulses in self.waves:
             wavetime_us = 0
             for pulse in pulses:
                 wavetime_us += pulse.delay
-            print(f"Wavelength: {len(pulses)} ({round(wavetime_us / 1000)} ms)")
+            on = self.__bits_set(pulses[0].gpio_on)
+            off = self.__bits_set(pulses[0].gpio_off)
+            print(f"  Wave, on: {on}, off: {off}, length: {len(pulses)} ({round(wavetime_us / 1000)} ms)")
             if wavetime_us > totaltime_us:
                 totaltime_us = wavetime_us
         self.wave_end_time = time() + totaltime_us / 1000000
+        print()
         return 0
 
     def wave_get_max_pulses(self):
@@ -69,3 +73,11 @@ class pi():
 
     def wave_get_max_cbs(self):
         return -1
+
+    def __bits_set(self, n: int) -> str:
+        numbers = []
+        for i in range(0, 31):
+            if n & 1:
+                numbers.append(i)
+            n = n >> 1
+        return str(numbers)
