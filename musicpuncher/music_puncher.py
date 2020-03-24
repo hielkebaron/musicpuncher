@@ -124,16 +124,16 @@ class MusicPuncher(object):
 
         total_time_steps = 0
         for idx, step in enumerate(steps):
-            # if idx == 0:
-            #     self.steppers.prepare_waveform(step)
-            # self.steppers.create_and_send_wave()  # run wave prepared for previous step
-            # if idx < len(steps) - 1:
-            #     self.steppers.prepare_waveform([steps[idx + 1][0], steps[idx + 1][1]])
-            # self.steppers.wait_for_wave()
-
-            self.steppers.prepare_waveform(step)
-            self.steppers.create_and_send_wave()
+            if idx == 0:
+                self.steppers.prepare_waveform(step)
+            self.steppers.create_and_send_wave()  # run wave prepared for previous step
+            if idx < len(steps) - 1:
+                self.steppers.prepare_waveform([steps[idx + 1][0], steps[idx + 1][1]])
             self.steppers.wait_for_wave()
+
+            # self.steppers.prepare_waveform(step)
+            # self.steppers.create_and_send_wave()
+            # self.steppers.wait_for_wave()
 
             self.position += step[1]
             self.puncher.punch()
