@@ -1,19 +1,31 @@
 from time import time
 
 from .keyboard import Keyboard
-from .music import parse_midi, adjust, transpose, write_midi, print_notes, autofit
+from .music import parse_midi, adjust, transpose, write_midi, print_notes, autofit, consolidate
 from .music_puncher import MusicPuncher
 
 
 def punch(file: str, adjustments: str, transpose_autofit: int, puncher_config, outfile: str = None,
           address: str = 'localhost', port: int = 8888):
     keyboard = Keyboard(puncher_config['keyboard'])
+
     notes = parse_midi(file)
-    adjust(notes, adjustments)
+    # print("\nParsed:")
+    # print_notes(notes)
+
+    notes = adjust(notes, adjustments)
+    # print("\nAdjusted:")
+    # print_notes(notes)
+
     if transpose_autofit != None:
-        autofit(notes, keyboard, transpose_autofit)
+        notes = autofit(notes, keyboard, transpose_autofit)
     else:
-        transpose(notes, keyboard)
+        notes = transpose(notes, keyboard)
+    # print("\nAutofitted/transposed:")
+    # print_notes(notes)
+
+    notes = consolidate(notes)
+    # print("\nConsolidated:")
     # print_notes(notes)
 
     if outfile:

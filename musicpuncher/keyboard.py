@@ -22,12 +22,12 @@ class Keyboard(object):
         for transposition in range(minimum, maximum + 1):
             unmapped = self.__get_unmapped_notes(noteset, transposition)
             result.append((transposition, unmapped))
-        result.sort(key=lambda tp: len(tp[1]) * 100 + tp[0])
+        result.sort(key=lambda tp: len(tp[1]) * 100 + abs(tp[0]))
 
         if len(result) > 0 and len(result[0][1]) == 0:
             return result[0][0]
 
-        bestfits = '\n'.join([f"{tp[0]}: {sorted(tp[1])}" for tp in result[:3]])
+        bestfits = '\n'.join([f"{tp[0]}: {sorted(tp[1])}" for tp in result[:5]])
         raise RuntimeError(
             f"Cannot fit\nnotes       {sorted(noteset)}\non keyboard {sorted(self.keyboard)}.\nBest fits:\n{bestfits}")
 
@@ -41,6 +41,7 @@ class Keyboard(object):
                     adjustment = diff
             if adjustment == sys.maxsize:
                 print(f"Can not fit note {note} on the keyboard, skipping!")
+                adjustments[note] = sys.maxsize
             elif adjustment != 0:
                 adjustments[note] = note + adjustment
         return adjustments

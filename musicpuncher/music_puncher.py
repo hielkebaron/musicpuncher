@@ -98,7 +98,7 @@ class MusicPuncher(object):
         position = self.position
         steps = []
         for delayNotes in notesequence:
-            if delayNotes.notes == []:
+            if len(delayNotes.notes) == 0:
                 raise (RuntimeError("Empty note set is not supported, consolidate consecutive delays first"))
             positions = sorted(
                 [self.row0 + round(self.keyboard.get_index(note) * self.tone_steps) for note in delayNotes.notes])
