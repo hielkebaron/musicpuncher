@@ -7,7 +7,7 @@ import yaml
 if os.getenv("MOCK_PIGPIO") == 'true':
     sys.modules['pigpio'] = __import__('pigpio_mock')
 
-from musicpuncher.runner import punch, calibrate
+from musicpuncher.runner import punch, calibrate, serve
 
 
 def run():
@@ -27,6 +27,9 @@ def run():
 
     group.add_argument('file', metavar='FILE', nargs='?', type=str, help='midi file to punch')
 
+    group.add_argument('--serve', action='store_true',
+                       help="Starts the webserver")
+
     args = parser.parse_args()
 
     with open(r'config.yaml') as file:
@@ -36,6 +39,8 @@ def run():
 
     if args.calibrate:
         calibrate(puncher_config, address=args.address, port=args.port)
+    elif args.serve:
+        serve(puncher_config, address=args.address, port=args.port)
     else:
         punch(args.file, args.adjust, args.autofit, puncher_config, address=args.address, port=args.port, outfile=args.out)
 

@@ -38,13 +38,23 @@ class MusicPuncher(object):
         self.end_feed = config['end-feed']
         self.position = None
 
+        self.active = False
+        self.progress = 0.0
+        self.stopRequested = False
+
         print(f"PiGPIO max pulses: {self.pi.wave_get_max_pulses()}")
         print(f"PiGPIO max cbs:    {self.pi.wave_get_max_cbs()}")
+
+    def status(self):
+        return {'active': self.active, 'progress': self.progress}
 
     def on(self):
         print(f"Switching the music puncher ON")
         self.status_led.set(Status.ON)
         self.steppers.on()
+        self.active = True
+        self.progress = 0.0
+        self.stopRequested = False
 
     def off(self, reset=False):
         if reset:
@@ -52,6 +62,10 @@ class MusicPuncher(object):
                 self.reset()
             except Exception as e:
                 print(f"Failed reset: {repr(e)}")
+
+        self.active = False
+        self.progress = 0.0
+        self.stopRequested = False
 
         print(f"Switching the music puncher OFF")
         try:
@@ -80,6 +94,9 @@ class MusicPuncher(object):
         self.puncher.punch()
         self.__move(0, self.idle_position - self.position)
         self.off()
+
+    def stop(self):
+        self.stopRequested = True
 
     def run(self, notesequence: NoteSequence, ):
         self.on()
@@ -124,6 +141,10 @@ class MusicPuncher(object):
 
         total_time_steps = 0
         for idx, step in enumerate(steps):
+            if self.stopRequested:
+                return
+
+            self.progress = idx / (len(steps) + 1)
             if idx == 0:
                 self.steppers.prepare_waveform(step)
             self.steppers.create_and_send_wave()  # run wave prepared for previous step
@@ -152,6 +173,7 @@ class MusicPuncher(object):
             self.__move(self.end_feed, self.idle_position - self.position)
 
         self.__move(0, self.idle_position - self.position)  # will do nothing if already in position
+        self.progress = 1.0
 
     def __move(self, feedsteps, tonesteps):
         if feedsteps == 0 and tonesteps == 0:

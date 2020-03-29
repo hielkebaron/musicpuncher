@@ -36,10 +36,10 @@ def get_notes(notes: NoteSequence) -> Set[int]:
     return noteset
 
 
-def parse_midi(filename: str) -> NoteSequence:
+def parse_midi(filename: str = None, file=None) -> NoteSequence:
     """Returns a list of (timedelta, notelist) tuples"""
     notes = []
-    with MidiFile(filename) as mid:
+    with MidiFile(filename=filename, file=file) as mid:
         notes_on = set()
         delta = 0
         for msg in mid:
