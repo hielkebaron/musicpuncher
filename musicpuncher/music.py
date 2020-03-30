@@ -146,7 +146,7 @@ def autofit(noteseq: NoteSequence, keyboard: Keyboard, transposition: int) -> No
     return __apply_adjustments(noteseq, adjustments)
 
 
-def write_midi(noteseq: NoteSequence, outfile):
+def write_midi(noteseq: NoteSequence, filename: str = None, file=None):
     ticks_per_beat = 1000
     us_per_tick = 100000
     mid = MidiFile(ticks_per_beat=ticks_per_beat)
@@ -181,4 +181,4 @@ def write_midi(noteseq: NoteSequence, outfile):
 
     pop_until(sys.maxsize, elapsed)
 
-    mid.save(outfile)
+    mid.save(filename=filename, file=file)

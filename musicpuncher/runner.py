@@ -30,7 +30,7 @@ def punch(file: str, adjustments: str, transpose_autofit: int, puncher_config, o
     # print_notes(notes)
 
     if outfile:
-        write_midi(notes, outfile)
+        write_midi(notes, filename=outfile)
     else:
         puncher = MusicPuncher(puncher_config, keyboard, address=address, port=port)
         start_time = time()

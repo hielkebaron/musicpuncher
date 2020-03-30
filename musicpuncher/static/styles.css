@@ -1,0 +1,13 @@
+
+.my-main {
+    max-width: 600px;
+}
+
+.my-status-line {
+    font-size: 150%;
+}
+
+.my-status-line .badge {
+    margin-bottom: 0.5rem;
+    vertical-align: middle;
+}

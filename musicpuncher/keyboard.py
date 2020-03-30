@@ -1,6 +1,8 @@
 import sys
 from typing import Set, Iterator, Dict
 
+class TransposeError(Exception):
+    pass
 
 class Keyboard(object):
     def __init__(self, keyboard: Iterator[int]):
@@ -27,9 +29,7 @@ class Keyboard(object):
         if len(result) > 0 and len(result[0][1]) == 0:
             return result[0][0]
 
-        bestfits = '\n'.join([f"{tp[0]}: {sorted(tp[1])}" for tp in result[:5]])
-        raise RuntimeError(
-            f"Cannot fit\nnotes       {sorted(noteset)}\non keyboard {sorted(self.keyboard)}.\nBest fits:\n{bestfits}")
+        raise TransposeError(f"Cannot fit notes on keyboard. Try Autofit with for example transposition of {[tp[0] for tp in result[:5]]}")
 
     def calculate_adjustments(self, noteset: Set[int]) -> Dict[int, int]:
         adjustments = dict()
