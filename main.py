@@ -39,7 +39,7 @@ def run():
 
     args = parser.parse_args()
 
-    with open(r'example_config.yaml') as file:
+    with open(r'config.yaml') as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
     puncher_config = config['music-puncher']
