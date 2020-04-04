@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+from shutil import copyfile
 
 import yaml
 
@@ -11,6 +12,11 @@ from musicpuncher.runner import punch, calibrate, serve
 
 
 def run():
+    if not os.path.isfile('config.yaml'):
+        copyfile('example_config.yaml', 'config.yaml')
+        print('Created config.yaml, please review, adjust where necessary and restart the application')
+        return
+
     # initiate the parser with a description
     parser = argparse.ArgumentParser(description='Controls the Music Puncher')
     parser.add_argument("-a", "--address", help="address of the Music Puncher (defaults to 'localhost')",
@@ -22,17 +28,18 @@ def run():
     parser.add_argument("-o", "--out", help="Write the resulting midi to the given midi file instead of punching it")
 
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--calibrate", action='store_true',
-                       help="Punches a hole on the first and last row, feeds 2 seconds and punches again")
 
     group.add_argument('file', metavar='FILE', nargs='?', type=str, help='midi file to punch')
+
+    group.add_argument("--calibrate", action='store_true',
+                       help="Punches a hole on the first and last row, feeds 2 seconds and punches again")
 
     group.add_argument('--serve', action='store_true',
                        help="Starts the webserver")
 
     args = parser.parse_args()
 
-    with open(r'config.yaml') as file:
+    with open(r'example_config.yaml') as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
     puncher_config = config['music-puncher']
@@ -42,7 +49,8 @@ def run():
     elif args.serve:
         serve(puncher_config, address=args.address, port=args.port)
     else:
-        punch(args.file, args.adjust, args.autofit, puncher_config, address=args.address, port=args.port, outfile=args.out)
+        punch(args.file, args.adjust, args.autofit, puncher_config, address=args.address, port=args.port,
+              outfile=args.out)
 
 
 run()
