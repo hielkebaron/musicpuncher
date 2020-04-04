@@ -42,9 +42,6 @@ class MusicPuncher(object):
         self.progress = 0.0
         self.stopRequested = False
 
-        print(f"PiGPIO max pulses: {self.pi.wave_get_max_pulses()}")
-        print(f"PiGPIO max cbs:    {self.pi.wave_get_max_cbs()}")
-
     def status(self):
         return {'active': self.active, 'progress': self.progress}
 

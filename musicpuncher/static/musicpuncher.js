@@ -1,5 +1,4 @@
-
-function punch() {
+function start(test) {
     clearError()
     var input = document.getElementById('midiFileInput');
     if (!input.files[0]) {
@@ -14,7 +13,7 @@ function punch() {
             base64String = fr.result
                 .replace('data:', '')
                 .replace(/^.+,/, '');
-            $.ajax("../api/punch", {
+            $.ajax(`../api/punch${test ? '?test=true' : ''}`, {
                 data: JSON.stringify({
                     'midiFile': base64String,
                     'filename': fileName,
@@ -22,7 +21,7 @@ function punch() {
                     'autofit': autofit
                 }),
                 contentType: 'application/json',
-                success: updateStatus,
+                success: test ? download : updateStatus,
                 error: errorhandler,
                 type: 'POST',
             })
@@ -31,36 +30,12 @@ function punch() {
     }
 }
 
+function punch() {
+    start(false)
+}
+
 function test() {
-    clearError()
-    var input = document.getElementById('midiFileInput');
-    if (!input.files[0]) {
-        alert("No file selected");
-    } else {
-        var file = input.files[0];
-        var fileName = $('.custom-file-label').text()
-        var transpose = parseInt($('#transpose').val())
-        var autofit = $('#autofit').is(":checked")
-        var fr = new FileReader();
-        fr.onload = function() {
-            base64String = fr.result
-                .replace('data:', '')
-                .replace(/^.+,/, '');
-            $.ajax("../api/punch?test=true", {
-                data: JSON.stringify({
-                    'midiFile': base64String,
-                    'filename': fileName,
-                    'transpose': transpose,
-                    'autofit': autofit
-                }),
-                contentType: 'application/json',
-                success: download,
-                error: errorhandler,
-                type: 'POST',
-            })
-        };
-        fr.readAsDataURL(file);
-    }
+    start(true)
 }
 
 function download(base64String) {
@@ -101,42 +76,65 @@ function stop() {
     })
 }
 
+
+const state = {
+    status: 'Unknown',
+    filename: null,
+    progress: 0
+}
+
+function statusChanged(model) {
+    mapping = {
+        'Error': ['badge-danger', 'Unable to get status'],
+        'Idle': ['badge-success', 'Idle'],
+        'Punching': ['badge-warning', 'Punching']
+    }
+    values = mapping[model.status]
+    statusbadge = $("#statusbadge")
+    statusbadge.attr('class', "badge " + values[0])
+    statusbadge.text(values[1])
+
+    if (model.status == 'Punching') {
+        clearError()
+        $("#inputpane").hide()
+        $("#progresspane").show()
+    } else {
+        $("#inputpane").show()
+        $("#progresspane").hide()
+    }
+
+    $("#stopbutton").prop('disabled', model.status != 'Punching')
+}
+
+function filenameChanged(model) {
+    $("#filename").text(model.filename)
+}
+
+function progressChanged(model) {
+    progressbar = $("#progress")
+    progressbar.css("width", `${model.progress}%`)
+    progressbar.attr("aria-valuenow", model.progress)
+}
+
+const modelProxy = new Proxy(state, {
+    set: function (target, key, value) {
+        if (target[key] != value) {
+            target[key] = value
+            window[`${key}Changed`](target)
+        }
+        return true;
+    }
+});
+
 function updateStatus() {
     $.ajax("../api/status", {
         error: function() {
-            statusbadge = $("#statusbadge")
-            statusbadge.attr('class', "badge badge-danger")
-            statusbadge.text("Unable to get status")
+            modelProxy.status = 'Error'
         },
         success: function(data) {
-            statusclasses = "badge badge-success"
-            statustext = "Idle"
-            filename = "None"
-
-            if (data.active) {
-                statusclasses = "badge badge-warning"
-                statustext = "Punching"
-                filename = data.file
-
-                clearError()
-                $("#inputpane").hide()
-                $("#progresspane").show()
-            } else {
-                $("#inputpane").show()
-                $("#progresspane").hide()
-            }
-
-            statusbadge = $("#statusbadge")
-            statusbadge.attr('class', statusclasses)
-            statusbadge.text(statustext)
-
-            $("#filename").text(filename)
-            progressbar = $("#progress")
-            percentage = data.progress * 100
-            progressbar.css("width", percentage + "%")
-            progressbar.attr("aria-valuenow", Math.round(percentage))
-
-            $("#stopbutton").prop('disabled', !data.active)
+            modelProxy.filename = data.file
+            modelProxy.status = data.active ? 'Punching' : 'Idle'
+            modelProxy.progress = Math.round(data.progress * 100)
         }
     });
 }

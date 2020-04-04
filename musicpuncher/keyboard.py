@@ -29,7 +29,7 @@ class Keyboard(object):
         if len(result) > 0 and len(result[0][1]) == 0:
             return result[0][0]
 
-        raise TransposeError(f"Cannot fit notes on keyboard. Try Autofit with for example transposition of {[tp[0] for tp in result[:5]]}")
+        raise TransposeError(f"Cannot fit notes on keyboard. Try Autofit. Suggested transpositions: {[tp[0] for tp in result[:5]]}")
 
     def calculate_adjustments(self, noteset: Set[int]) -> Dict[int, int]:
         adjustments = dict()
