@@ -182,6 +182,7 @@ class MusicPuncher(object):
 
     def reset(self):
         print('> reset')
+        self.puncher.reset()
         if self.zero_button:
             self.steppers.steppers[1].move_until(-1, lambda: self.zero_button.is_on())
             self.position = 0
@@ -217,6 +218,12 @@ class Puncher:
     def punch(self):
         # print(f"punch")
         self.pi.write(self.pin, 1)
+        sleep(self.on_length)
+        self.pi.write(self.pin, 0)
+        sleep(self.off_length)
+
+    def reset(self):
+        # TODO Can we read the state of the pin and only execute this when the puncher is down?
         sleep(self.on_length)
         self.pi.write(self.pin, 0)
         sleep(self.off_length)
