@@ -223,10 +223,10 @@ class Puncher:
         sleep(self.off_length)
 
     def reset(self):
-        # TODO Can we read the state of the pin and only execute this when the puncher is down?
-        sleep(self.on_length)
-        self.pi.write(self.pin, 0)
-        sleep(self.off_length)
+        if self.pi.read(self.pin) == 1:
+            sleep(self.on_length)
+            self.pi.write(self.pin, 0)
+        sleep(self.off_length) # always wait, the puncher might still be in motion
 
 
 class Cutter:
