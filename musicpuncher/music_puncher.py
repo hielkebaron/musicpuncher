@@ -83,7 +83,7 @@ class MusicPuncher(object):
         self.reset()
         self.__move(0, self.row0 - self.position)
         self.puncher.punch()
-        self.__move(0, round((self.keyboard.size() - 1) * self.tone_steps) - self.position)
+        self.__move(0, round(self.keyboard.size() - 1) * self.tone_steps)
         self.puncher.punch()
         self.__move(self.feed_steps * 2, 0)
         self.puncher.punch()
@@ -303,10 +303,10 @@ class PiGPIOStepperMotor(object):
         pi.set_mode(self.step_pin, pigpio.OUTPUT)
 
     def on(self):
-        self.pi.write(self.enable_pin, 1)
+        self.pi.write(self.enable_pin, 0)
 
     def off(self):
-        self.pi.write(self.enable_pin, 0)
+        self.pi.write(self.enable_pin, 1)
 
     # def __set_dir(self, dir: int):
     #     dir = dir * -1 if self.reverse else dir
