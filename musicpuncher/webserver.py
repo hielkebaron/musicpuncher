@@ -25,6 +25,7 @@ def punch():
     if instance.puncher.active:
         raise RuntimeError("Puncher is still active!")
 
+    instance.puncher.clearError()
     content = request.json
     instance.currentFile = content['filename']
     midiBase64 = content['midiFile']

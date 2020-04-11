@@ -37,13 +37,17 @@ class MusicPuncher(object):
         self.cutter_position = config['cutter-position']
         self.end_feed = config['end-feed']
         self.position = None
+        self.error = None
 
         self.active = False
         self.progress = 0.0
         self.stopRequested = False
 
     def status(self):
-        return {'active': self.active, 'progress': self.progress}
+        return {'active': self.active, 'progress': self.progress, 'error': self.error}
+
+    def clearError(self):
+        self.error = None
 
     def on(self):
         print(f"Switching the music puncher ON")
@@ -52,6 +56,7 @@ class MusicPuncher(object):
         self.active = True
         self.progress = 0.0
         self.stopRequested = False
+        self.error = None
 
     def off(self, reset=False):
         if reset:
@@ -74,8 +79,9 @@ class MusicPuncher(object):
     def calibrate(self):
         try:
             self.__do_calibrate()
-        except:
-            self.off(reset=True)
+        except Exception as e:
+            self.error = str(e)
+            self.off()
             raise
 
     def __do_calibrate(self):
@@ -103,8 +109,9 @@ class MusicPuncher(object):
             steps = self.__calculate_all_steps(notesequence)
             self.do_run(steps)
             self.off()
-        except:
-            self.off(reset=True)
+        except Exception as e:
+            self.error = str(e)
+            self.off()
             raise
 
     def __calculate_all_steps(self, notesequence: NoteSequence):
@@ -139,6 +146,7 @@ class MusicPuncher(object):
         total_time_steps = 0
         for idx, step in enumerate(steps):
             if self.stopRequested:
+                self.error = "Manually stopped"
                 return
 
             self.progress = idx / (len(steps) + 1)

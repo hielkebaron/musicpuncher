@@ -80,7 +80,8 @@ function stop() {
 const state = {
     status: 'Unknown',
     filename: null,
-    progress: 0
+    progress: 0,
+    error: null
 }
 
 function statusChanged(model) {
@@ -116,6 +117,10 @@ function progressChanged(model) {
     progressbar.attr("aria-valuenow", model.progress)
 }
 
+function errorChanged(model) {
+    setError(model.error)
+}
+
 const modelProxy = new Proxy(state, {
     set: function (target, key, value) {
         if (target[key] != value) {
@@ -135,6 +140,7 @@ function updateStatus() {
             modelProxy.filename = data.file
             modelProxy.status = data.active ? 'Punching' : 'Idle'
             modelProxy.progress = Math.round(data.progress * 100)
+            modelProxy.error = data.error
         }
     });
 }
@@ -143,10 +149,18 @@ function clearError() {
     $("#error").hide()
 }
 
+function setError(message) {
+    if (!message) {
+        clearError()
+    } else {
+        $("#error").text(message)
+        $("#error").show()
+    }
+}
+
 function errorhandler(xhr, status, error) {
     message = xhr.responseText || error
-    $("#error").text(`Error ${status}: ${message}`)
-    $("#error").show()
+    setError(`Error ${status}: ${message}`)
 }
 
 $('#midiFileInput').on('change', function() {
