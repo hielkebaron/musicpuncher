@@ -183,6 +183,13 @@ class MusicPuncher(object):
     def __move(self, feedsteps, tonesteps):
         if feedsteps == 0 and tonesteps == 0:
             return
+
+        if abs(feedsteps) + abs(tonesteps) > 6000 and feedsteps != 0 and tonesteps != 0:
+            # try to avoid limit of max 12000 pulses by executing the motions sequentially
+            self.__move(0, tonesteps)
+            self.__move(feedsteps, 0)
+            return
+
         self.steppers.prepare_waveform([feedsteps, tonesteps])
         self.steppers.create_and_send_wave()
         self.steppers.wait_for_wave()
@@ -234,7 +241,7 @@ class Puncher:
         if self.pi.read(self.pin) == 1:
             sleep(self.on_length)
             self.pi.write(self.pin, 0)
-        sleep(self.off_length) # always wait, the puncher might still be in motion
+        sleep(self.off_length)  # always wait, the puncher might still be in motion
 
 
 class Cutter:
