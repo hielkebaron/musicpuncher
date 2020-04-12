@@ -6,18 +6,16 @@ import pigpio
 
 from .music import NoteSequence
 
-MIN_SPS = 1000  # steps per second
-MAX_SPS = 3000  # steps per second
-ACCELERATION = 1000  # SPS per second
 from .keyboard import Keyboard
 
 
 class MusicPuncher(object):
-    def __init__(self, config, keyboard: Keyboard, address: str = 'localhost', port: int = 8888):
-        self.pi = pigpio.pi(address, port)
+    def __init__(self, config, keyboard: Keyboard):
+        pigpio_config = config['pigpio']
+        self.pi = pigpio.pi(pigpio_config['host'], pigpio_config['port'])
         if not self.pi.connected:
             raise RuntimeError(
-                f"PI Not connected, make sure the pi is available on {address} and is running pigpiod on port {port}")
+                f"PI Not connected, make sure the pi is available on {pigpio_config['host']} and is running pigpiod on port {pigpio_config['port']}")
 
         self.keyboard = keyboard
 
@@ -146,7 +144,7 @@ class MusicPuncher(object):
         total_time_steps = 0
         for idx, step in enumerate(steps):
             if self.stopRequested:
-                self.error = "Manually stopped"
+                self.error = "Manually interrupted"
                 return
 
             self.progress = idx / (len(steps) + 1)

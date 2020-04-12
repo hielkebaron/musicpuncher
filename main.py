@@ -15,13 +15,9 @@ def run():
     if not os.path.isfile('config.yaml'):
         copyfile('example_config.yaml', 'config.yaml')
         print('Created config.yaml, please review, adjust where necessary and restart the application')
-        return
 
     # initiate the parser with a description
     parser = argparse.ArgumentParser(description='Controls the Music Puncher')
-    parser.add_argument("-a", "--address", help="address of the Music Puncher (defaults to 'localhost')",
-                        default="localhost")
-    parser.add_argument("-p", "--port", help="port of the pigpio daemon (defaults to 8888)", type=int, default=8888)
     parser.add_argument("--adjust", help="Adjust notes. Example: --adjust '32+,99--' will replace 32 by 44"
                                          " (+ one octave) and 99 by 75 (- two octaves)", default='')
     parser.add_argument("--autofit", help="Transposes with given value and auto-adjust notes if possible", type=int)
@@ -45,12 +41,11 @@ def run():
     puncher_config = config['music-puncher']
 
     if args.calibrate:
-        calibrate(puncher_config, address=args.address, port=args.port)
+        calibrate(puncher_config)
     elif args.serve:
-        serve(puncher_config, address=args.address, port=args.port)
+        serve(puncher_config)
     else:
-        punch(args.file, args.adjust, args.autofit, puncher_config, address=args.address, port=args.port,
-              outfile=args.out)
+        punch(args.file, args.adjust, args.autofit, puncher_config, outfile=args.out)
 
 
 run()

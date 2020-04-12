@@ -6,8 +6,7 @@ from .music_puncher import MusicPuncher
 from .webserver import WebServer
 
 
-def punch(file: str, adjustments: str, transpose_autofit: int, puncher_config, outfile: str = None,
-          address: str = 'localhost', port: int = 8888):
+def punch(file: str, adjustments: str, transpose_autofit: int, puncher_config, outfile: str = None):
     keyboard = Keyboard(puncher_config['keyboard'])
 
     notes = parse_midi(filename=file)
@@ -32,7 +31,7 @@ def punch(file: str, adjustments: str, transpose_autofit: int, puncher_config, o
     if outfile:
         write_midi(notes, filename=outfile)
     else:
-        puncher = MusicPuncher(puncher_config, keyboard, address=address, port=port)
+        puncher = MusicPuncher(puncher_config, keyboard)
         start_time = time()
         try:
             puncher.run(notes)
@@ -43,13 +42,14 @@ def punch(file: str, adjustments: str, transpose_autofit: int, puncher_config, o
         print(f"Done in {round(end_time - start_time)} seconds")
 
 
-def calibrate(puncher_config, address: str = 'localhost', port: int = 8888):
+def calibrate(puncher_config):
     keyboard = Keyboard(puncher_config['keyboard'])
-    puncher = MusicPuncher(puncher_config, keyboard, address=address, port=port)
+    puncher = MusicPuncher(puncher_config, keyboard)
     puncher.calibrate()
 
 
-def serve(puncher_config, address: str = 'localhost', port: int = 8888):
+def serve(puncher_config):
     keyboard = Keyboard(puncher_config['keyboard'])
-    puncher = MusicPuncher(puncher_config, keyboard, address=address, port=port)
-    WebServer(keyboard, puncher).run()
+    puncher = MusicPuncher(puncher_config, keyboard)
+    config = puncher_config['webserver']
+    WebServer(keyboard, puncher, config).run()

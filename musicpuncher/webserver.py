@@ -81,11 +81,12 @@ def status():
 
 class WebServer(object):
 
-    def __init__(self, keyboard: Keyboard, puncher: MusicPuncher):
+    def __init__(self, keyboard: Keyboard, puncher: MusicPuncher, config):
         self.keyboard = keyboard
         self.puncher = puncher
+        self.config = config
         global instance
         instance = self
 
     def run(self):
-        serve(app, host="0.0.0.0", port=8080)
+        serve(app, host=self.config['host'], port=self.config['port'])
