@@ -7,6 +7,7 @@ function start(test) {
         var file = input.files[0];
         var fileName = $('.custom-file-label').text()
         var transpose = parseInt($('#transpose').val())
+        var autotranspose = $('#autotranspose').is(":checked")
         var autofit = $('#autofit').is(":checked")
         var fr = new FileReader();
         fr.onload = function() {
@@ -17,6 +18,7 @@ function start(test) {
                 data: JSON.stringify({
                     'midiFile': base64String,
                     'filename': fileName,
+                    'autotranspose': autotranspose,
                     'transpose': transpose,
                     'autofit': autofit
                 }),

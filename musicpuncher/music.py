@@ -100,7 +100,7 @@ def __apply_adjustments(noteseq: NoteSequence, adjustmentDict: Dict[int, int]) -
     return result
 
 
-def __apply_transposition(noteseq: NoteSequence, transposition: int) -> NoteSequence:
+def apply_transposition(noteseq: NoteSequence, transposition: int) -> NoteSequence:
     result = []
     for delayNotes in noteseq:
         newnotes = set()
@@ -128,19 +128,16 @@ def adjust(noteseq: NoteSequence, adjustments: str) -> NoteSequence:
     return __apply_adjustments(noteseq, adjustmentDict)
 
 
-def transpose(noteseq: NoteSequence, keyboard: Keyboard) -> NoteSequence:
+def autotranspose(noteseq: NoteSequence, keyboard: Keyboard, best_effort = False) -> NoteSequence:
     noteset = get_notes(noteseq)
-    transposition = keyboard.calculate_transposition(noteset)
-    return __apply_transposition(noteseq, transposition)
+    transposition = keyboard.calculate_transposition(noteset, best_effort=best_effort)
+    print(f"Calculated transposition: {transposition}")
+    return apply_transposition(noteseq, transposition)
 
 
-def autofit(noteseq: NoteSequence, keyboard: Keyboard, transposition: int) -> NoteSequence:
+def autofit(noteseq: NoteSequence, keyboard: Keyboard) -> NoteSequence:
     noteset = get_notes(noteseq)
     print(f"Notes: {sorted(noteset)}")
-
-    noteseq = __apply_transposition(noteseq, transposition)
-    noteset = get_notes(noteseq)
-    print(f"Transposed: {sorted(noteset)}")
 
     adjustments = keyboard.calculate_adjustments(noteset)
     return __apply_adjustments(noteseq, adjustments)

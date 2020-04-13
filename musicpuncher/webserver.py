@@ -7,7 +7,7 @@ from flask import Flask, redirect, request, jsonify
 from waitress import serve
 
 from .keyboard import Keyboard, TransposeError
-from .music import parse_midi, autofit, consolidate, transpose, write_midi
+from .music import parse_midi, autofit, consolidate, write_midi, autotranspose, apply_transposition, get_notes
 from .music_puncher import MusicPuncher
 
 app = Flask(__name__)
@@ -29,6 +29,7 @@ def punch():
     content = request.json
     instance.currentFile = content['filename']
     midiBase64 = content['midiFile']
+    doAutotranspose = content['autotranspose']
     transposition = content['transpose']
     doAutofit = content['autofit']
     test = request.args.get('test') == 'true'
@@ -38,16 +39,21 @@ def punch():
     file = BytesIO(midiBytes)
     notes = parse_midi(file=file)
 
-    if doAutofit:
-        notes = autofit(notes, instance.keyboard, transposition)
-    else:
+    if doAutotranspose:
         try:
-            notes = transpose(notes, instance.keyboard)
+            notes = autotranspose(notes, instance.keyboard, best_effort=doAutofit)
         except TransposeError as error:
             return str(error), 400
+    else:
+        notes = apply_transposition(notes, transposition)
 
-    notes = autofit(notes, instance.keyboard, 0)
+    if doAutofit:
+        notes = autofit(notes, instance.keyboard)
+    elif not instance.keyboard.does_fit(get_notes(notes)):
+        return str('Notes do not fit on the keyboard, try autofit'), 400
+
     notes = consolidate(notes)
+
 
     if test:
         outfile = BytesIO()

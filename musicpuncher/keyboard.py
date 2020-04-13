@@ -1,8 +1,10 @@
 import sys
 from typing import Set, Iterator, Dict
 
+
 class TransposeError(Exception):
     pass
+
 
 class Keyboard(object):
     def __init__(self, keyboard: Iterator[int]):
@@ -16,7 +18,7 @@ class Keyboard(object):
         """Returns the index of the note in the keyboard array"""
         return self.indexed[note]
 
-    def calculate_transposition(self, noteset: Set[int]) -> int:
+    def calculate_transposition(self, noteset: Set[int], best_effort=False) -> int:
         minimum = min(self.keyboard) - min(noteset) - 12
         maximum = max(self.keyboard) - max(noteset) + 12
 
@@ -29,7 +31,11 @@ class Keyboard(object):
         if len(result) > 0 and len(result[0][1]) == 0:
             return result[0][0]
 
-        raise TransposeError(f"Cannot fit notes on keyboard. Try Autofit. Suggested transpositions: {[tp[0] for tp in result[:5]]}")
+        if best_effort:
+            return result[0][0]
+
+        raise TransposeError(
+            f"Cannot fit notes on keyboard. Try Autofit. Suggested transpositions: {[tp[0] for tp in result[:5]]}")
 
     def calculate_adjustments(self, noteset: Set[int]) -> Dict[int, int]:
         adjustments = dict()
@@ -48,3 +54,6 @@ class Keyboard(object):
 
     def __get_unmapped_notes(self, notes, transposition: int) -> Set[int]:
         return {note for note in notes if not (note + transposition) in self.indexed}
+
+    def does_fit(self, notes) -> bool:
+        return len(self.__get_unmapped_notes(notes, 0)) == 0
