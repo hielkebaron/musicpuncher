@@ -99,11 +99,11 @@ function statusChanged(model) {
 
     if (model.status == 'Punching') {
         clearError()
-        $("#inputpane").hide()
-        $("#progresspane").show()
+        $("#inputpane").collapse('hide')
+        $("#progresspane").collapse('show')
     } else {
-        $("#inputpane").show()
-        $("#progresspane").hide()
+        $("#inputpane").collapse('show')
+        $("#progresspane").collapse('hide')
     }
 
     $("#stopbutton").prop('disabled', model.status != 'Punching')
@@ -148,7 +148,7 @@ function updateStatus() {
 }
 
 function clearError() {
-    $("#error").hide()
+    $("#error").collapse('hide')
 }
 
 function setError(message) {
@@ -156,7 +156,7 @@ function setError(message) {
         clearError()
     } else {
         $("#error").text(message)
-        $("#error").show()
+        $("#error").collapse('show')
     }
 }
 

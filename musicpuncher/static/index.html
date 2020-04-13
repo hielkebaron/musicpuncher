@@ -24,7 +24,7 @@
         </div>
     </div>
 
-    <div id="inputpane">
+    <div id="inputpane" class="collapse show">
         <form action="#" onsubmit="punch();return false">
             <div class="form-row">
                 <div class="form-group col-md-12">
@@ -49,7 +49,7 @@
                 <div class="form-row">
                     <div class="form-group form-check col-md-12">
                         <label class="form-spinner-label" for="transpose">Transpose</label>
-                        <input class="col-md-8" type="number" id="transpose" value="0" min="0" max="50" step="1" disabled/>
+                        <input class="col-md-8" type="number" id="transpose" value="0" min="0" max="50" step="1"/>
                     </div>
                 </div>
             </div>
@@ -60,7 +60,7 @@
         </form>
     </div>
 
-    <div id="progresspane">
+    <div id="progresspane" class="collapse">
         <div class="row col my-status-line">
             <label>File: <span id="filename">Unknown</span></label>
         </div>
@@ -73,7 +73,7 @@
 
     <div class="row">
         <div class="col">
-            <div id="error" class="alert alert-danger" role="alert" style="display: none;"></div>
+            <div id="error" class="alert alert-danger collapse" role="alert"></div>
         </div>
     </div>
 </div>
