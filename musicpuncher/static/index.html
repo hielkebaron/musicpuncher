@@ -42,13 +42,15 @@
 
             <div class="form-group form-row checkbox col-xs-12">
                 <label for="autotranspose" class="col-form-label col-xs-4">Autotranspose</label>
-                <input type="checkbox" checked class="col-xs-8 form-control" id="autotranspose">
+                <input type="checkbox" checked class="col-xs-8 form-control" id="autotranspose" data-toggle='collapse' data-target='#transposecontrol'>
             </div>
 
-            <div class="form-row">
-                <div class="form-group form-check col-md-12">
-                    <label class="form-spinner-label" for="transpose">Transpose</label>
-                    <input class="col-md-8" type="number" id="transpose" value="0" min="0" max="50" step="1" disabled/>
+            <div id="transposecontrol" class="collapse">
+                <div class="form-row">
+                    <div class="form-group form-check col-md-12">
+                        <label class="form-spinner-label" for="transpose">Transpose</label>
+                        <input class="col-md-8" type="number" id="transpose" value="0" min="0" max="50" step="1" disabled/>
+                    </div>
                 </div>
             </div>
             <div class="form-group">
