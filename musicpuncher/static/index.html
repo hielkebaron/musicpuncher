@@ -35,14 +35,20 @@
                     </div>
                 </div>
             </div>
+            <div class="form-group form-row checkbox col-xs-12">
+                <label for="autofit" class="col-form-label  col-xs-4">Autofit</label>
+                <input type="checkbox" checked class="col-xs-8 form-control" id="autofit">
+            </div>
+
+            <div class="form-group form-row checkbox col-xs-12">
+                <label for="transpose-auto" class="col-form-label col-xs-4">Autotranspose</label>
+                <input type="checkbox" checked class="col-xs-8 form-control" id="autotranspose">
+            </div>
+
             <div class="form-row">
-                <div class="form-check col-md-6">
-                    <label class="form-check-label" for="autofit">Autofit</label>
-                    <input type="checkbox" class="form-control" id="autofit">
-                </div>
-                <div class="form-group col-md-6">
+                <div class="form-group form-check col-md-12">
                     <label class="form-spinner-label" for="transpose">Transpose</label>
-                    <input type="number" id="transpose" value="0" min="0" max="50" step="1" disabled/>
+                    <input class="col-md-8" type="number" id="transpose" value="0" min="0" max="50" step="1" disabled/>
                 </div>
             </div>
             <div class="form-group">

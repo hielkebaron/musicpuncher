@@ -11,3 +11,11 @@
     margin-bottom: 0.5rem;
     vertical-align: middle;
 }
+
+/* Jitse some overrides for the checkboxes */
+.checkbox label {
+    width: 140px;
+}
+.checkbox input {
+    width: 40px;
+}

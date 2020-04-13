@@ -170,8 +170,8 @@ $('#midiFileInput').on('change', function() {
 
 $("input[type='number']").inputSpinner()
 
-$("#autofit").on('change', function() {
-    $("#transpose").prop('disabled', !$(this).is(":checked"))
+$("#autotranspose").on('change', function() {
+    $("#transpose").prop('disabled', $(this).is(":checked"))
 })
 
 updateStatus();
