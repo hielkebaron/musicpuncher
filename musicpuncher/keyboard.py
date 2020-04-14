@@ -7,8 +7,11 @@ class TransposeError(Exception):
 
 
 class Keyboard(object):
-    def __init__(self, keyboard: Iterator[int]):
+    def __init__(self, keyboard: Iterator[int], reverse: bool):
         self.keyboard = list(keyboard)
+        if reverse:
+            self.keyboard.reverse()
+
         self.indexed = {note: idx for idx, note in enumerate(self.keyboard)}
 
     def size(self):

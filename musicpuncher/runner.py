@@ -6,8 +6,13 @@ from .music_puncher import MusicPuncher
 from .webserver import WebServer
 
 
+def __get_keyboard(puncher_config) -> Keyboard:
+    reverse = 'reverse_keyboard' in puncher_config and puncher_config['reverse_keyboard']
+    return Keyboard(puncher_config['keyboard'], reverse=reverse)
+
+
 def punch(file: str, adjustments: str, transpose_autofit: int, puncher_config, outfile: str = None):
-    keyboard = Keyboard(puncher_config['keyboard'])
+    keyboard = __get_keyboard(puncher_config)
 
     notes = parse_midi(filename=file)
     # print("\nParsed:")
@@ -44,13 +49,13 @@ def punch(file: str, adjustments: str, transpose_autofit: int, puncher_config, o
 
 
 def calibrate(puncher_config):
-    keyboard = Keyboard(puncher_config['keyboard'])
+    keyboard = __get_keyboard(puncher_config)
     puncher = MusicPuncher(puncher_config, keyboard)
     puncher.calibrate()
 
 
 def serve(puncher_config):
-    keyboard = Keyboard(puncher_config['keyboard'])
+    keyboard = __get_keyboard(puncher_config)
     puncher = MusicPuncher(puncher_config, keyboard)
     config = puncher_config['webserver']
     WebServer(keyboard, puncher, config).run()
