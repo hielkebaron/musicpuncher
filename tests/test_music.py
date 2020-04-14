@@ -12,7 +12,7 @@ def test_calculate_transposition_finds_nearest_match():
     keyboard = Keyboard(C_MAJOR_SINGLE)
 
     noteseq = [DelayNotes(1, [61]), DelayNotes(1, [64, 65]), DelayNotes(1, [67])]
-    result = autofit(noteseq, keyboard, transposition=3)
+    result = autofit(apply_transposition(noteseq, 3), keyboard)
 
     # Oorspronkelijke sequece is ongewijzigd
     assert noteseq == [DelayNotes(1, [61]), DelayNotes(1, [64, 65]), DelayNotes(1, [67])]

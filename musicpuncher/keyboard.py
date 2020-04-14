@@ -7,7 +7,7 @@ class TransposeError(Exception):
 
 
 class Keyboard(object):
-    def __init__(self, keyboard: Iterator[int], reverse: bool):
+    def __init__(self, keyboard: Iterator[int], reverse: bool = False):
         self.keyboard = list(keyboard)
         if reverse:
             self.keyboard.reverse()

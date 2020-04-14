@@ -3,13 +3,13 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import pytest
-from musicpuncher.keyboard import Keyboard
+from musicpuncher.keyboard import Keyboard, TransposeError
 
 C_MAJOR_SINGLE = [60, 62, 64, 65, 67, 69, 71, 72]
 
 
 def test_calculate_transposition_finds_nearest_match():
-    keyboard = Keyboard(C_MAJOR_SINGLE)
+    keyboard = Keyboard(C_MAJOR_SINGLE, reverse=False)
 
     assert keyboard.calculate_transposition({57, 58}) == 7
     assert keyboard.calculate_transposition({58, 59}) == 6
@@ -33,17 +33,17 @@ def test_calculate_transposition_finds_nearest_match():
 
 
 def test_calculate_transposition_throws_exception_if_impossible():
-    keyboard = Keyboard(C_MAJOR_SINGLE)
+    keyboard = Keyboard(C_MAJOR_SINGLE, reverse=False)
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(TransposeError):
         keyboard.calculate_transposition({60, 61, 62})
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(TransposeError):
         keyboard.calculate_transposition({60, 74})
 
 
 def test_calculate_transposition_is_independent_on_keyboard_order():
-    keyboard = Keyboard(reversed(C_MAJOR_SINGLE))
+    keyboard = Keyboard(C_MAJOR_SINGLE, reverse=True)
 
     assert keyboard.calculate_transposition({57, 58}) == 7
     assert keyboard.calculate_transposition({64, 65}) == 0
@@ -52,7 +52,7 @@ def test_calculate_transposition_is_independent_on_keyboard_order():
 
 
 def test_get_index():
-    keyboard = Keyboard(C_MAJOR_SINGLE)
+    keyboard = Keyboard(C_MAJOR_SINGLE, reverse=False)
 
     assert keyboard.get_index(60) == 0
     assert keyboard.get_index(62) == 1
@@ -65,7 +65,7 @@ def test_get_index():
         keyboard.get_index(61)
 
 def test_get_index_respects_keyboard_order():
-    keyboard = Keyboard(reversed(C_MAJOR_SINGLE))
+    keyboard = Keyboard(C_MAJOR_SINGLE, reverse=True)
 
     assert keyboard.get_index(60) == 7
     assert keyboard.get_index(62) == 6
