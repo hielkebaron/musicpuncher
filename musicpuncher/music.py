@@ -12,6 +12,8 @@ MIN_VELOCITY = 20  # PPP
 
 
 class DelayNotes(object):
+    # Represents a list of notes to be played simultaneously AFTER the given delay
+
     def __init__(self, delay: float, notes: Iterable[int]):
         self.delay = delay
         self.notes = sorted(notes)

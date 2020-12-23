@@ -1,12 +1,12 @@
+import math
 from enum import auto, Enum
 from time import sleep, time
 from typing import List
 
 import pigpio
 
-from .music import NoteSequence
-
 from .keyboard import Keyboard
+from .music import NoteSequence
 
 
 class MusicPuncher(object):
@@ -32,6 +32,7 @@ class MusicPuncher(object):
         self.row0 = config['row0']
         self.tone_steps = config['tone-steps']
         self.feed_steps = config['feed-steps']
+        self.minimal_feed = config['minimal-feed']
         self.cutter_position = config['cutter-position']
         self.end_feed = config['end-feed']
         self.position = None
@@ -114,6 +115,7 @@ class MusicPuncher(object):
 
     def __calculate_all_steps(self, notesequence: NoteSequence):
         """returns a list of tuples with (delay, note) steps for each hole"""
+        feed_steps = self.__calculate_feed_steps(notesequence)
         position = self.position
         steps = []
         for delayNotes in notesequence:
@@ -123,7 +125,7 @@ class MusicPuncher(object):
                 [self.row0 + round(self.keyboard.get_index(note) * self.tone_steps) for note in delayNotes.notes])
             if abs(position - positions[-1]) < abs(position - positions[0]):
                 positions.reverse()  # Start from nearest end
-            delay = round(delayNotes.delay * self.feed_steps)
+            delay = round(delayNotes.delay * feed_steps)
             for targetPosition in positions:
                 tuple = (delay, targetPosition - position)
                 if tuple != (0, 0):
@@ -131,6 +133,25 @@ class MusicPuncher(object):
                 position = targetPosition
                 delay = 0
         return steps
+
+    def __calculate_feed_steps(self, notesequence: NoteSequence):
+        last_timestamp_per_tone = {}
+        time = 0
+        import sys
+        minimum_delta = sys.maxsize  # shortest time in seconds between two notes of the same pitch
+        for delay_notes in notesequence:
+            time += delay_notes.delay
+            for note in delay_notes.notes:
+                if note in last_timestamp_per_tone:
+                    minimum_delta = min(time - last_timestamp_per_tone[note], minimum_delta)
+                last_timestamp_per_tone[note] = time
+        feed_steps = self.feed_steps
+        if minimum_delta < sys.maxsize:
+            minimum_steps = math.ceil(self.minimal_feed / minimum_delta)
+            feed_steps = max(feed_steps, minimum_steps)
+
+        print(f"Effective feed steps: {feed_steps}")
+        return feed_steps
 
     def do_run(self, steps):
         total_time_steps = 0

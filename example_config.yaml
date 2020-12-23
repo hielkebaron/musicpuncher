@@ -20,7 +20,9 @@ music-puncher:
   idle-position: 10       # Number of steps from the zero-detector at which to position the head when idle
   row0: 100               # Number of steps from the zero-detector to ROW 0 of the keyboard
   tone-steps: 100.5       # Number of steps per tone (distance between the rows, floating point number)
+
   feed-steps: 100         # Number of steps to feed per second of music
+  minimal-feed: 50        # The minimal feed between subsequent punches for the same pitch, may scale feed-steps up
   cutter-position: -3000  # number of steps after last punch (minus means number of steps before last punch)
   end-feed: 5000          # number of steps to feed after last punch or cut (whichever is last)
 
