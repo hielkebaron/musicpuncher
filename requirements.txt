@@ -1,6 +1,6 @@
 mido==1.2.9
-pytest==4.0.0
-pigpio==1.44
-pyyaml==5.2
-flask==1.1.1
-waitress==1.4.3
+pytest==6.2.2
+pigpio==1.78
+pyyaml==5.4.1
+flask==1.1.2
+waitress==2.0.0
