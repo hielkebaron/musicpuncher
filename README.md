@@ -29,4 +29,4 @@ To start as a web server:
 ```commandline
 python main.py
 ```
-and op [http://localhost:8080/](http://localhost:8080/) in your browser. Replace localhost with the hostname or ip of your pi if you run this command from a pi.
+and open [http://localhost:8080/](http://localhost:8080/) in your browser. Replace localhost with the hostname or ip of your pi if you run this command from a pi.
