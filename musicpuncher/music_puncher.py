@@ -88,7 +88,7 @@ class MusicPuncher(object):
         self.reset()
         self.__move(0, self.row0 - self.position)
         self.puncher.punch()
-        self.__move(0, round(self.keyboard.size() - 1) * self.tone_steps)
+        self.__move(0, round((self.keyboard.size() - 1) * self.tone_steps))
         self.puncher.punch()
         self.__move(self.feed_steps * 2, 0)
         self.puncher.punch()
@@ -150,7 +150,6 @@ class MusicPuncher(object):
             minimum_steps = math.ceil(self.minimal_feed / minimum_delta)
             feed_steps = max(feed_steps, minimum_steps)
 
-        print(f"Effective feed steps: {feed_steps}")
         return feed_steps
 
     def do_run(self, steps):
